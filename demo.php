@@ -72,8 +72,9 @@ $config = [
     ]
 ];
 
-function saveDataFile($name, $data = []) {
-    array_walk($data, function(&$item) {
+function saveDataFile($name, $data = [])
+{
+    array_walk($data, function (&$item) {
         if (is_array($item)) {
             $item = implode("||", $item);
         }

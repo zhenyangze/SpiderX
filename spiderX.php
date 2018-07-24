@@ -207,7 +207,8 @@ class SpiderX
         return $scheme.'://'.$abs;
     }
 
-    protected function fetchData($pageInfo, $html) {
+    protected function fetchData($pageInfo, $html)
+    {
         $name = $pageInfo['name'];
         if (!isset($this->config['rule'][$name])) {
             return [];
@@ -215,31 +216,33 @@ class SpiderX
 
         $dataRule = $this->config['rule'][$name];
         $data = [];
-        foreach($dataRule['data'] as $field => $func) {
+        foreach ($dataRule['data'] as $field => $func) {
             $data[$field] = $func($pageInfo, $html, $data);
         }
         return $data;
     }
 
-    protected function fetchLinks($pageInfo, $html, $data = []) {
+    protected function fetchLinks($pageInfo, $html, $data = [])
+    {
         if ($pageInfo['type'] == 'list') {
-            foreach($data as $field => $itemList) {
-                foreach($itemList as $index => $value) {
+            foreach ($data as $field => $itemList) {
+                foreach ($itemList as $index => $value) {
                     $sliceData = [];
-                    foreach(array_keys($data) as $newKey) {
+                    foreach (array_keys($data) as $newKey) {
                         $sliceData[$newKey] = $data[$newKey][$index];
                     }
                     $this->fetchSimpleLinks($pageInfo, $html, $sliceData);
                 }
             }
-        }  else {
+        } else {
             $this->fetchSimpleLinks($pageInfo, $html, $data);
         }
     }
 
     // 检索页面中的连接
-    protected function fetchSimpleLinks($pageInfo, $html, $data = []) {
-        foreach($this->config['rule'] as $rule) {
+    protected function fetchSimpleLinks($pageInfo, $html, $data = [])
+    {
+        foreach ($this->config['rule'] as $rule) {
             if (empty($rule['url'])) {
                 continue;
             }
@@ -249,15 +252,15 @@ class SpiderX
                 $this->fetchUrlLink($rule, $pageInfo, $html, $data);
             }
         }
-
     }
 
-    protected function fetchRegularLink($rule, $pageInfo, $html, $data = []) {
+    protected function fetchRegularLink($rule, $pageInfo, $html, $data = [])
+    {
         $links = $this->setGetLinks($html);
         $regx = trim($rule['url'], '#');
         $regx = trim($regx, '/');
 
-        foreach($links as $link) {
+        foreach ($links as $link) {
             $link = $this->rel2abs($link, $pageInfo['url']);
             if (preg_match('#' . $regx . '#is', $link)) {
                 // 符合条件
@@ -272,7 +275,8 @@ class SpiderX
         }
     }
 
-    protected function fetchUrlLink($rule, $pageInfo, $html = '', $data = []) {
+    protected function fetchUrlLink($rule, $pageInfo, $html = '', $data = [])
+    {
         if (empty($rule['url'])) {
             return;
         }
@@ -291,7 +295,7 @@ class SpiderX
         if (!is_array($urlList)) {
             $urlList = [$urlList];
         }
-        array_walk($urlList, function($url) use($rule, $data) {
+        array_walk($urlList, function ($url) use ($rule, $data) {
             $this->addUrl([
                 'url' => $url,
                 'type' => $rule['type'],
