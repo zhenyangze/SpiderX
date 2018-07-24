@@ -136,14 +136,14 @@ class SpiderX
         if (empty($pageInfo['url'])) {
             return;
         }
-        if ($pageInfo['type'] == 'list') {
-            $pageInfo['context'] = [];
-        }
+        $context = $pageInfo['context'];
+        $pageInfo['context'] = [];
         $pageInfo['url'] = $this->formatUrl($pageInfo['url']);
         $urlMd5 = md5(json_encode($pageInfo));
         if (!$this->checkQueue->add($urlMd5)) {
             return;
         }
+        $pageInfo['context'] = $context;
         $pageInfo['retry'] = isset($pageInfo['retry']) ? $pageInfo['retry'] + 1 : 0;
         $this->queue->push($pageInfo);
     }
@@ -216,15 +216,17 @@ class SpiderX
 
         $dataRule = $this->config['rule'][$name];
         $data = [];
-        foreach ($dataRule['data'] as $field => $func) {
-            $data[$field] = $func($pageInfo, $html, $data);
+        if (isset($dataRule['data'])) {
+            foreach ($dataRule['data'] as $field => $func) {
+                $data[$field] = $func($pageInfo, $html, $data);
+            }
         }
         return $data;
     }
 
     protected function fetchLinks($pageInfo, $html, $data = [])
     {
-        if ($pageInfo['type'] == 'list') {
+        if ($pageInfo['type'] == 'list' && !empty($data)) {
             foreach ($data as $field => $itemList) {
                 foreach ($itemList as $index => $value) {
                     $sliceData = [];
