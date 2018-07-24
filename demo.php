@@ -72,15 +72,36 @@ $config = [
     ]
 ];
 
+function saveDataFile($name, $data = []) {
+    array_walk($data, function(&$item) {
+        if (is_array($item)) {
+            $item = implode("||", $item);
+        }
+        $item = trim(str_ireplace([
+            ','
+        ], [
+            '，'
+        ], $item));
+    });
+    $file = __DIR__ . '/data/' . $name . '.csv';
+    if (!file_exists($file)) {
+        file_put_contents($file, implode(',', array_keys($data)) . "\n", FILE_APPEND | LOCK_EX);
+    }
+    file_put_contents($file, implode(',', array_values($data)) . "\n", FILE_APPEND | LOCK_EX);
+}
+
 $spider = new SpiderX($config);
 $spider->on_fetch_detail = function ($pageInfo, $html, $data) {
+    saveDataFile($pageInfo['name'], $data);
     echo '[' . $pageInfo['type'] . ']' . $pageInfo['url'] . "\n";
 };
 $spider->on_fetch_blog_detail = function ($pageInfo, $html, $data) {
+    saveDataFile($pageInfo['name'], $data);
     echo '[' . $pageInfo['type'] . ']' . $pageInfo['url'] . "\n";
 };
 
 $spider->on_fetch_list = function ($pageInfo, $html, $data) {
+    saveDataFile($pageInfo['name'], $data);
     echo '[' . $pageInfo['type'] . ']' . $pageInfo['url'] . "\n";
 };
 $spider->start();

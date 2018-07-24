@@ -8,31 +8,6 @@
  * @copyright (C) 2018 zhenyangze <zhenyangze@gmail.com>
  * @license MIT
  */
-/**
-include_once __DIR__ . '/spider.php';
-
-$config = [
-    'start-url' => [
-        'https://www.jb51.net/list/list_123_1.htm'
-    ],
-    'list-url-rule' => [
-        'list/list_123_\d+.htm',
-    ],
-    'content-url-rule' => [
-        'article/\d+.htm'
-    ]
-];
-
-$spider = new Spider($config);
-$spider->on_deal_content = function ($html, $pageInfo) {
-    echo '[' . $pageInfo['type'] . ']' . $pageInfo['url'] . "\n";
-};
-
-$spider->on_deal_list = function ($html, $pageInfo) {
-    echo '[' . $pageInfo['type'] . ']' . $pageInfo['url'] . "\n";
-};
-$spider->start();
- */
 class SpiderX
 {
     protected $config;
@@ -116,7 +91,20 @@ class SpiderX
         if (!isset($this->setGetHtml)) {
             $this->setGetHtml = function ($pageInfo) {
                 if (isset($pageInfo['method']) && strtolower($pageInfo['method']) == 'post') {
-
+                    $data = $pageInfo['query'];
+                    $url = $pageInfo['url'];
+                    $content = http_build_query($data);
+                    $length = strlen($content);
+                    $options = array(
+                        'http' => array(
+                            'method' => 'POST',
+                            'header' =>
+                            "Content-type: application/x-www-form-urlencoded\r\n" .
+                            "Content-length: $length \r\n",
+                            'content' => $content
+                        )
+                    );
+                    $html = file_get_contents($url, false, stream_context_create($options));
                 } else {
                     $html = file_get_contents($pageInfo['url']);
                 }
@@ -283,7 +271,7 @@ class SpiderX
         }
     }
 
-    protected function fetchUrlLink($rule, $pageInfo, $html, $data = []) {
+    protected function fetchUrlLink($rule, $pageInfo, $html = '', $data = []) {
         if (empty($rule['url'])) {
             return;
         }
