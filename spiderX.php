@@ -243,7 +243,7 @@ class SpiderX
             if (empty($rule['url'])) {
                 continue;
             }
-            if (strpos('#', $rule['url']) !== false | strpos($rule['url'], '/') !== false) {
+            if (strpos($rule['url'], '#') === 0 | strpos($rule['url'], '/') === 0) {
                 $this->fetchRegularLink($rule, $pageInfo, $html, $data);
             } else {
                 $this->fetchUrlLink($rule, $pageInfo, $html, $data);
@@ -254,7 +254,8 @@ class SpiderX
 
     protected function fetchRegularLink($rule, $pageInfo, $html, $data = []) {
         $links = $this->setGetLinks($html);
-        $regx = trim($rule['url']);
+        $regx = trim($rule['url'], '#');
+        $regx = trim($regx, '/');
 
         foreach($links as $link) {
             $link = $this->rel2abs($link, $pageInfo['url']);

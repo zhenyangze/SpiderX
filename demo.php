@@ -19,7 +19,7 @@ $config = [
         [
             'name' => 'list',
             'type' => 'list',
-            'url' => 'gdxw1/index_\d+.shtml',
+            'url' => '#gdxw1/index_\d+.shtml#',
             'data' => [
                 'title' => function ($pageInfo, $html, $data) {
                     preg_match_all('/<li><a href=".*?" target="_blank">(.*?)<\/a><span>/i', $html, $matches);
