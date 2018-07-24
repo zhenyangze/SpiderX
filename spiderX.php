@@ -24,12 +24,12 @@ $config = [
 ];
 
 $spider = new Spider($config);
-$spider->on_deal_content = function ($html, $urlInfo) {
-    echo '[' . $urlInfo['type'] . ']' . $urlInfo['url'] . "\n";
+$spider->on_deal_content = function ($html, $pageInfo) {
+    echo '[' . $pageInfo['type'] . ']' . $pageInfo['url'] . "\n";
 };
 
-$spider->on_deal_list = function ($html, $urlInfo) {
-    echo '[' . $urlInfo['type'] . ']' . $urlInfo['url'] . "\n";
+$spider->on_deal_list = function ($html, $pageInfo) {
+    echo '[' . $pageInfo['type'] . ']' . $pageInfo['url'] . "\n";
 };
 $spider->start();
  */
@@ -60,38 +60,42 @@ class SpiderX
         $this->invok('on_start');
 
         // 添加首页
-        if (!empty($this->config['start-url'])) {
-            array_walk($this->config['start-url'], function ($url) {
-                $this->addUrl($url, 'start');
+        if (!empty($this->config['start'])) {
+            array_walk($this->config['start'], function ($url) {
+                $this->addUrl([
+                    'url' => $url,
+                    'type' => 'start',
+                    'name' => 'start',
+                    'context' => [],
+                ]);
             });
         }
-
         while ($this->queue->length()) {
-            $urlInfo = $this->queue->pop();
+            $pageInfo = $this->queue->pop();
 
             // 加载前校验
-            if (!$this->invok('on_prepare_' . $urlInfo['name'], [
-                $urlInfo
+            if (!$this->invok('on_prepare_' . $pageInfo['name'], [
+                $pageInfo
             ], true)) {
                 continue;
             }
 
             // get or post
-            $html = $this->setGetHtml($urlInfo);
+            $html = $this->setGetHtml($pageInfo);
 
             //列表和详情共用一套
-            $data = $this->fetchData($urlInfo, $html);
+            $data = $this->fetchData($pageInfo, $html);
 
             // 回调
-            $userData = $this->invok('on_fetch_' . $urlInfo['name'], [
-                $urlInfo,
+            $userData = $this->invok('on_fetch_' . $pageInfo['name'], [
+                $pageInfo,
                 $html,
-                $data,
+                $data
             ]);
             $data = empty($userData) ? $data : $userData;
 
             // 处理子链
-            $this->fetchLinks($urlInfo, $html, $data);
+            $this->fetchLinks($pageInfo, $html, $data);
         }
         
         $this->invok('on_finish');
@@ -110,9 +114,14 @@ class SpiderX
         $this->queue = new Queue();
         $this->checkQueue = new UniqArray();
         if (!isset($this->setGetHtml)) {
-            $this->setGetHtml = function ($url) {
+            $this->setGetHtml = function ($pageInfo) {
+                if (isset($pageInfo['method']) && strtolower($pageInfo['method']) == 'post') {
+
+                } else {
+                    $html = file_get_contents($pageInfo['url']);
+                }
                 usleep(200);
-                return file_get_contents($url);
+                return mb_convert_encoding($html, 'UTF-8', 'UTF-8,GBK,GB2312,BIG5');
             };
         }
         if (!isset($this->setGetLinks)) {
@@ -134,67 +143,48 @@ class SpiderX
             };
         }
     }
-    public function addUrl($url, $type, $name, $params = [])
+    public function addUrl($pageInfo = [])
     {
-        $url = $this->formatUrl($url);
-        $urlMd5 = md5($url);
+        if (empty($pageInfo['url'])) {
+            return;
+        }
+        if ($pageInfo['type'] == 'list') {
+            $pageInfo['context'] = [];
+        }
+        $pageInfo['url'] = $this->formatUrl($pageInfo['url']);
+        $urlMd5 = md5(json_encode($pageInfo));
         if (!$this->checkQueue->add($urlMd5)) {
             return;
         }
-        $this->queue->push([
-            'url' => $url,
-            'type' => $type,
-            'name' => $name,
-            'params' => $params,
-            'retry' => 0,
-        ]);
+        $pageInfo['retry'] = isset($pageInfo['retry']) ? $pageInfo['retry'] + 1 : 0;
+        $this->queue->push($pageInfo);
     }
 
     public function formatUrl($url)
     {
-        $urlInfo = parse_url($url);
-        foreach ($urlInfo as $field => $value) {
+        $pageInfo = parse_url($url);
+        foreach ($pageInfo as $field => $value) {
             switch ($field) {
                 case 'scheme':
-                    $urlInfo[$field] .= '://';
+                    $pageInfo[$field] .= '://';
                     break;
                 case 'query':
-                    $urlInfo[$field] = '?' . $urlInfo[$field];
+                    $pageInfo[$field] = '?' . $pageInfo[$field];
                     break;
                 case 'fragment':
-                    $urlInfo[$field] = '';
+                    $pageInfo[$field] = '';
                     break;
             }
         }
 
-        return implode('', $urlInfo);
+        return implode('', $pageInfo);
     }
 
-    protected function parseLink($links = [], $baseUrl = '', $params = [])
-    {
-        foreach ((array)$links as $url) {
-            if (empty($url)) {
-                continue;
-            }
-            $realUrl = $this->rel2abs($url, $baseUrl);
-
-            foreach ($this->config['content-url-rule'] as $rule) {
-                if (preg_match('#' . $rule . '#is', $realUrl)) {
-                    $this->addUrl($realUrl, 'content', $params);
-                    break;
-                }
-            }
-
-            foreach ($this->config['list-url-rule'] as $rule) {
-                if (preg_match('#' . $rule . '#is', $realUrl)) {
-                    $this->addUrl($realUrl, 'list');
-                    break;
-                }
-            }
-        }
-    }
     public function rel2abs($rel, $base)
     {
+        if (empty($rel)) {
+            return;
+        }
         /* return if already absolute URL */
         if (parse_url($rel, PHP_URL_SCHEME) != '') {
             return $rel;
@@ -229,70 +219,97 @@ class SpiderX
         return $scheme.'://'.$abs;
     }
 
-    protected function fetchData($urlInfo, $html) {
-        $name = $urlInfo['name'];
+    protected function fetchData($pageInfo, $html) {
+        $name = $pageInfo['name'];
+        if (!isset($this->config['rule'][$name])) {
+            return [];
+        }
 
         $dataRule = $this->config['rule'][$name];
         $data = [];
-        foreach($dataRule as $field => $func) {
-            $data[$field] = $func($urlInfo, $html, $data);
+        foreach($dataRule['data'] as $field => $func) {
+            $data[$field] = $func($pageInfo, $html, $data);
         }
-        
         return $data;
     }
 
-    protected function fetchLinks($urlInfo, $html, $data) {
-        if ($urlInfo['type'] == 'list') {
+    protected function fetchLinks($pageInfo, $html, $data = []) {
+        if ($pageInfo['type'] == 'list') {
             foreach($data as $field => $itemList) {
                 foreach($itemList as $index => $value) {
                     $sliceData = [];
                     foreach(array_keys($data) as $newKey) {
                         $sliceData[$newKey] = $data[$newKey][$index];
                     }
-                    $this->fetchSimpleLinks($urlInfo, $html, $data);
+                    $this->fetchSimpleLinks($pageInfo, $html, $sliceData);
                 }
             }
         }  else {
-            $this->fetchSimpleLinks($urlInfo, $html, $data);
+            $this->fetchSimpleLinks($pageInfo, $html, $data);
         }
     }
 
     // 检索页面中的连接
-    protected function fetchSimpleLinks($urlInfo, $html, $data) {
-        $this->fetchRegularLink($urlInfo, $html, $data);
-        $this->fetchUrlLink($urlInfo, $html, $data);
-    }
-
-    protected function fetchRegularLink($urlInfo, $html, $data) {
-
-    }
-
-    protected function fetchUrlLink($urlInfo, $html, $data) {
+    protected function fetchSimpleLinks($pageInfo, $html, $data = []) {
         foreach($this->config['rule'] as $rule) {
             if (empty($rule['url'])) {
                 continue;
             }
+            if (strpos('#', $rule['url']) !== false | strpos($rule['url'], '/') !== false) {
+                $this->fetchRegularLink($rule, $pageInfo, $html, $data);
+            } else {
+                $this->fetchUrlLink($rule, $pageInfo, $html, $data);
+            }
+        }
 
-            $fromUrlInfo = explode('.', $rule['url']);
-            if (empty($fromUrlInfo[0]) || empty($fromUrlInfo[1])) {
-                continue;
+    }
+
+    protected function fetchRegularLink($rule, $pageInfo, $html, $data = []) {
+        $links = $this->setGetLinks($html);
+        $regx = trim($rule['url']);
+
+        foreach($links as $link) {
+            $link = $this->rel2abs($link, $pageInfo['url']);
+            if (preg_match('#' . $regx . '#is', $link)) {
+                // 符合条件
+                $subPageInfo = [
+                    'type' => $rule['type'],
+                    'name' => $rule['name'],
+                    'url' => $link,
+                    'context' => $data,
+                ];
+                $this->addUrl($subPageInfo);
             }
-            if ($fromUrlInfo[0] != $urlInfo['name']) {
-                continue;
-            }
-            $url = empty($data[$fromUrlInfo[1]]) ? '' : $data[$fromUrlInfo[1]];
-            if (empty($url)) {
-                continue;
-            }
-            $subUrlInfo = [
+        }
+    }
+
+    protected function fetchUrlLink($rule, $pageInfo, $html, $data = []) {
+        if (empty($rule['url'])) {
+            return;
+        }
+
+        $fromPageInfo = explode('.', $rule['url']);
+        if (empty($fromPageInfo[0]) || empty($fromPageInfo[1])) {
+            return;
+        }
+        if ($fromPageInfo[0] != $pageInfo['name']) {
+            return;
+        }
+        $urlList = empty($data[$fromPageInfo[1]]) ? '' : $data[$fromPageInfo[1]];
+        if (empty($urlList)) {
+            return;
+        }
+        if (!is_array($urlList)) {
+            $urlList = [$urlList];
+        }
+        array_walk($urlList, function($url) use($rule, $data) {
+            $this->addUrl([
+                'url' => $url,
                 'type' => $rule['type'],
                 'name' => $rule['name'],
-                'url' => $url,
-                'params' => $data,
-            ];
-
-            $this->addUrl($url, $rule['type'], $rule['name'], $data);
-        }
+                'context' => $data,
+            ]);
+        });
     }
 }
 
