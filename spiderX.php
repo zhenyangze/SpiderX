@@ -57,6 +57,10 @@ class SpiderX
 
             // get or post
             $html = $this->setGetHtml($pageInfo);
+            if (empty($html) && $pageInfo['retry'] < 3) {
+                $this->addUrl($pageInfo);
+                continue;
+            }
 
             //列表和详情共用一套
             $data = $this->fetchData($pageInfo, $html);
