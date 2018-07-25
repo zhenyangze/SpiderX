@@ -13,7 +13,6 @@ class SpiderX
     protected $config;
     protected $queue;
     protected $checkQueue; // 用于检测重复
-    protected $deep = false; // 是否在文章页面也抓取数据
 
     public function __construct($config = [])
     {
@@ -120,95 +119,31 @@ class SpiderX
             $this->setGetLinks = function ($str) {
                 preg_match_all('/href=([\'"]?)([^\s><\'"]*)\1/is', $str, $match);
                 $links = isset($match['2']) ? $match[2] : [];
-                unset($match);
-                unset($str);
-                /**
-                $dom = new DOMDocument();
-                @$dom->loadHTML($str);
-                $xpath = new DOMXPath($dom);
-                $hrefs = $xpath->evaluate("/html/body//a");
-                for ($i = 0; $i < $hrefs->length; $i++) {
-                    $href = $hrefs->item($i);
-                    $links[] = $href->getAttribute('href');
-                }*/
                 return $links;
             };
         }
     }
     public function addUrl($pageInfo = [])
     {
-        if (empty($pageInfo['url'])) {
+        if (!$this->checkUnique($pageInfo)) {
             return;
         }
-        $context = $pageInfo['context'];
-        $pageInfo['context'] = [];
-        $pageInfo['url'] = $this->formatUrl($pageInfo['url']);
-        $urlMd5 = md5(json_encode($pageInfo));
-        if (!$this->checkQueue->add($urlMd5)) {
-            return;
-        }
-        $pageInfo['context'] = $context;
         $pageInfo['retry'] = isset($pageInfo['retry']) ? $pageInfo['retry'] + 1 : 0;
         $this->queue->push($pageInfo);
     }
 
-    public function formatUrl($url)
-    {
-        $pageInfo = parse_url($url);
-        foreach ($pageInfo as $field => $value) {
-            switch ($field) {
-                case 'scheme':
-                    $pageInfo[$field] .= '://';
-                    break;
-                case 'query':
-                    $pageInfo[$field] = '?' . $pageInfo[$field];
-                    break;
-                case 'fragment':
-                    $pageInfo[$field] = '';
-                    break;
-            }
+    protected function checkUnique($pageInfo) {
+        if (empty($pageInfo['url'])) {
+            return false;
+        }
+        $pageInfo['context'] = [];
+        $pageInfo['url'] = Url::formatUrl($pageInfo['url']);
+        $urlMd5 = md5(json_encode($pageInfo));
+        if (!$this->checkQueue->add($urlMd5)) {
+            return false;
         }
 
-        return implode('', $pageInfo);
-    }
-
-    public function rel2abs($rel, $base)
-    {
-        if (empty($rel)) {
-            return;
-        }
-        /* return if already absolute URL */
-        if (parse_url($rel, PHP_URL_SCHEME) != '') {
-            return $rel;
-        }
-
-        /* queries and anchors */
-        if ($rel[0]=='#' || $rel[0]=='?') {
-            return $base.$rel;
-        }
-
-        /* parse base URL and convert to local variables:
-        $scheme, $host, $path */
-        extract(parse_url($base));
-
-        /* remove non-directory element from path */
-        $path = preg_replace('#/[^/]*$#', '', $path);
-
-        /* destroy path if relative url points to root */
-        if ($rel[0] == '/') {
-            $path = '';
-        }
-
-        /* dirty absolute URL */
-        $abs = "$host$path/$rel";
-
-        /* replace '//' or '/./' or '/foo/../' with '/' */
-        $re = array('#(/\.?/)#', '#/(?!\.\.)[^/]+/\.\./#');
-        for ($n=1; $n>0; $abs=preg_replace($re, '/', $abs, -1, $n)) {
-        }
-
-        /* absolute URL is ready! */
-        return $scheme.'://'.$abs;
+        return true;
     }
 
     protected function fetchData($pageInfo, $html)
@@ -267,7 +202,7 @@ class SpiderX
         $regx = trim($regx, '/');
 
         foreach ($links as $link) {
-            $link = $this->rel2abs($link, $pageInfo['url']);
+            $link = Url::rel2abs($link, $pageInfo['url']);
             if (preg_match('#' . $regx . '#is', $link)) {
                 // 符合条件
                 $subPageInfo = [
@@ -309,67 +244,5 @@ class SpiderX
                 'context' => $data,
             ]);
         });
-    }
-}
-
-class Queue
-{
-    public function __construct($key = '')
-    {
-        if (empty($key)) {
-            $key = 'YANGZE:' . md5(uniqid());
-        }
-        $this->key = $key;
-        $this->redis = new Redis();
-        $this->redis->connect('127.0.0.1', 6379);
-    }
-
-    public function __destruct()
-    {
-        $this->redis->delete($this->key);
-    }
-
-    public function length()
-    {
-        return $this->redis->llen($this->key);
-    }
-
-    public function push($data)
-    {
-        $data = serialize($data);
-        return $this->redis->lpush($this->key, $data);
-    }
-
-    public function pop()
-    {
-        $data = $this->redis->rpop($this->key);
-        return unserialize($data);
-    }
-}
-
-class UniqArray
-{
-    public function __construct($key = '')
-    {
-        if (empty($key)) {
-            $key = 'YANGZE:' . md5(uniqid());
-        }
-        $this->key = $key;
-        $this->redis = new Redis();
-        $this->redis->connect('127.0.0.1', 6379);
-    }
-
-    public function __destruct()
-    {
-        $this->deleKey();
-    }
-    public function deleKey()
-    {
-        $this->redis->delete($this->key);
-    }
-
-    public function add($value)
-    {
-        return $this->redis->sadd($this->key, $value);
     }
 }
