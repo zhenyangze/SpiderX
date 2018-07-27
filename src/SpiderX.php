@@ -23,8 +23,8 @@ class SpiderX extends SpiderXAbstract
     {
         $this->config = $config;
         $this->checkConfig();
-        $this->checkData();
         $this->init();
+        $this->checkData();
         $this->addListener();
     }
 
@@ -44,10 +44,6 @@ class SpiderX extends SpiderXAbstract
     }
 
     protected function checkData() {
-        $redisConfig = $this->config['redis'];
-        $redisConfig['key'] = $this->config['name'];
-        $this->queue = new Queue($redisConfig);
-        $this->uniqueArray = new Unique($redisConfig);
 
         Log::info('Queue key: ' . $this->queue->getKey());
         Log::info('uniqueArray key: ' . $this->uniqueArray->getKey());
@@ -67,6 +63,11 @@ class SpiderX extends SpiderXAbstract
 
     protected function init()
     {
+        $redisConfig = $this->config['redis'];
+        $redisConfig['key'] = $this->config['name'];
+        $this->queue = new Queue($redisConfig);
+        $this->uniqueArray = new Unique($redisConfig);
+
         if (!isset($this->setGetHtml)) {
             $this->setGetHtml = function ($pageInfo) {
                 return Url::getHtml($pageInfo);
@@ -120,10 +121,32 @@ class SpiderX extends SpiderXAbstract
         }
     }
 
-    public function start()
-    {
+    public function start() {
         // 执行前可以添加数据
         $this->invok('on_start');
+
+        $taskNum = function_exists('\swoole_cpu_num') ? \swoole_cpu_num() * 2 : 1;
+        $taskNum = isset($this->config['tasknum']) ? $this->config['tasknum'] : $taskNum;
+
+        if (function_exists('\swoole_process')) {
+            $task = $this;
+            $taskList = [];
+            for($i = 0; $i < $taskNum; $i++) {
+                $process = new swoole_process(function(\swoole_process $worker) use($i, $task, $taskList){
+                    $task->runTask();
+                });
+                $taskList[$i] = $process->start();
+            }
+            swoole_process::wait();
+        } else {
+            $this->runTask();
+        }
+        $this->invok('on_finish');
+    }
+
+    protected function runTask()
+    {
+        $this->init();
 
         // 添加首页
         $this->addStartUrl();
@@ -173,7 +196,6 @@ class SpiderX extends SpiderXAbstract
             // 检测子链
             $this->fetchLinks($pageInfo, $html, $data);
         }
-        $this->invok('on_finish');
     }
 
     protected function addStartUrl()
