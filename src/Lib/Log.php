@@ -47,4 +47,11 @@ class Log
         self::init();
         self::$instance['logger']->debug($info, (array)$data);
     }
+
+    public static function read($info = '请输入')
+    {
+        fwrite(STDOUT, $info. ": ");
+        $result = trim(fgets(STDIN));
+        return trim($result);
+    }
 }

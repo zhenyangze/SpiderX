@@ -14,7 +14,7 @@ abstract class SpiderXAbstract
 {
     protected $config;
     protected $queue; // 数据队列
-    protected $checkQueue; // 用于检测重复
+    protected $uniqueArray; // 用于检测重复
 
     abstract public function start();
 
@@ -78,10 +78,13 @@ abstract class SpiderXAbstract
         if (empty($pageInfo['url'])) {
             return false;
         }
+        if (in_array($pageInfo['type'], ['start', 'list'])) {
+            return true;
+        }
         $pageInfo['context'] = [];
         $pageInfo['url'] = Url::formatUrl($pageInfo['url']);
         $urlMd5 = md5(json_encode($pageInfo));
-        if (!$this->checkQueue->add($urlMd5)) {
+        if (!$this->uniqueArray->add($urlMd5)) {
             return false;
         }
 

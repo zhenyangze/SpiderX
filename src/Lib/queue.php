@@ -9,19 +9,17 @@
  * @license MIT
  */
 namespace SpiderX\Lib;
+
 class Queue
 {
-    public function __construct($key = '')
+    public function __construct($config = [])
     {
-        if (empty($key)) {
-            $key = 'YANGZE:' . md5(uniqid());
-        }
-        $this->key = $key;
+        $this->key = 'SpiderX:' . $config['key'] . ':Queue';
         $this->redis = new \Redis();
-        $this->redis->connect('127.0.0.1', 6379);
+        $this->redis->connect($config['host'], $config['port']);
     }
 
-    public function __destruct()
+    public function delete()
     {
         $this->redis->delete($this->key);
     }

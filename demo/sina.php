@@ -12,7 +12,7 @@
 include_once __DIR__ . '/../vendor/autoload.php';
 
 $config = [
-    'name' => 'demo',
+    'name' => 'sina',
     'start' => [
         'http://roll.news.sina.com.cn/news/gnxw/gdxw1/index.shtml',
     ],
@@ -92,7 +92,7 @@ function saveDataFile($name, $data = [])
     file_put_contents($file, implode(',', array_values($data)) . "\n", FILE_APPEND | LOCK_EX);
 }
 
-$spider = new SpiderX\Lib\SpiderX($config);
+$spider = new SpiderX\SpiderX($config);
 $spider->on_fetch_detail = function ($pageInfo, $html, $data) {
     saveDataFile($pageInfo['name'], $data);
     echo '[' . $pageInfo['type'] . ']' . $pageInfo['url'] . "\n";

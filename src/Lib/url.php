@@ -93,7 +93,7 @@ class Url {
         $html = '';
         try {
             $response = self::$instance['client']->request($method, $pageInfo['url'], $sendData);
-            $html = $response->body;
+            $html = $response->getBody();
         } catch (Exception $e) {
             $html = '';
         }
