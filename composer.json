@@ -3,6 +3,7 @@
     "description": "php spider with swoole",
     "type": "library",
     "require": {
+        "php": ">=7.0",
         "guzzlehttp/guzzle": "^6.3",
         "league/climate": "dev-master",
         "katzgrau/klogger": "dev-master"
