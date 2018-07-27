@@ -1,0 +1,23 @@
+{
+    "name": "yangze/spiderx",
+    "description": "php spider with swoole",
+    "type": "library",
+    "require": {
+        "guzzlehttp/guzzle": "^6.3",
+        "league/climate": "dev-master",
+        "katzgrau/klogger": "dev-master"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "zhenyangze",
+            "email": "zhenyangze@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "autoload": {
+        "psr-4": {
+            "SpiderX\\": "src/"
+        }
+    }
+}

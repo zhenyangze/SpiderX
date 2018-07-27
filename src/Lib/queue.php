@@ -8,6 +8,7 @@
  * @copyright (C) 2018 zhenyangze <zhenyangze@gmail.com>
  * @license MIT
  */
+namespace SpiderX\Lib;
 class Queue
 {
     public function __construct($key = '')
@@ -16,7 +17,7 @@ class Queue
             $key = 'YANGZE:' . md5(uniqid());
         }
         $this->key = $key;
-        $this->redis = new Redis();
+        $this->redis = new \Redis();
         $this->redis->connect('127.0.0.1', 6379);
     }
 

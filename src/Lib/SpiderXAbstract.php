@@ -1,24 +1,26 @@
 <?php
 /**
- * Short description for spider.php
+ * Short description for SpiderXAbstract.php
  *
- * @package spider
+ * @package SpiderXAbstract
  * @author zhenyangze <zhenyangze@gmail.com>
  * @version 0.1
  * @copyright (C) 2018 zhenyangze <zhenyangze@gmail.com>
  * @license MIT
  */
-class SpiderX
+namespace SpiderX\Lib;
+
+abstract class SpiderXAbstract
 {
     protected $config;
-    protected $queue;
+    protected $queue; // 数据队列
     protected $checkQueue; // 用于检测重复
+
+    abstract public function start();
 
     public function __construct($config = [])
     {
         $this->config = $config;
-        $this->config['rule'] = array_column($this->config['rule'], null, 'name');
-        $this->init();
     }
 
     public function __call($method, $args)
@@ -28,111 +30,51 @@ class SpiderX
         }
     }
 
-    public function start()
-    {
-        // 执行前可以添加数据
-        $this->invok('on_start');
-
-        // 添加首页
-        if (!empty($this->config['start'])) {
-            array_walk($this->config['start'], function ($url) {
-                $this->addUrl([
-                    'url' => $url,
-                    'type' => 'start',
-                    'name' => 'start',
-                    'context' => [],
-                ]);
-            });
-        }
-        while ($this->queue->length()) {
-            $pageInfo = $this->queue->pop();
-
-            // 加载前校验
-            if (!$this->invok('on_prepare_' . $pageInfo['name'], [
-                $pageInfo
-            ], true)) {
-                continue;
-            }
-
-            // get or post
-            $html = $this->setGetHtml($pageInfo);
-            if (empty($html) && $pageInfo['retry'] < 3) {
-                $this->addUrl($pageInfo);
-                continue;
-            }
-
-            //列表和详情共用一套
-            $data = $this->fetchData($pageInfo, $html);
-
-            // 回调
-            $userData = $this->invok('on_fetch_' . $pageInfo['name'], [
-                $pageInfo,
-                $html,
-                $data
-            ]);
-            $data = empty($userData) ? $data : $userData;
-
-            // 处理子链
-            $this->fetchLinks($pageInfo, $html, $data);
-        }
-        
-        $this->invok('on_finish');
-    }
-
     protected function invok($func, $args = [], $default = [])
     {
-        if (!isset($this->$func)) {
-            return $default;
+        $eventName = $func;
+        if (stristr($eventName, 'on_load') || stristr($eventName, 'on_fetch')) {
+            $eventName = str_ireplace(strrchr($eventName, '_'), '', $eventName);
         }
-        return call_user_func_array($this->$func, $args);
+        Event::trigger($eventName, $args);
+
+        if (isset($this->$func)) {
+            return call_user_func_array($this->$func, $args);
+        }
     }
 
-    protected function init()
-    {
-        $this->queue = new Queue();
-        $this->checkQueue = new UniqArray();
-        if (!isset($this->setGetHtml)) {
-            $this->setGetHtml = function ($pageInfo) {
-                if (isset($pageInfo['method']) && strtolower($pageInfo['method']) == 'post') {
-                    $data = $pageInfo['query'];
-                    $url = $pageInfo['url'];
-                    $content = http_build_query($data);
-                    $length = strlen($content);
-                    $options = array(
-                        'http' => array(
-                            'method' => 'POST',
-                            'header' =>
-                            "Content-type: application/x-www-form-urlencoded\r\n" .
-                            "Content-length: $length \r\n",
-                            'content' => $content
-                        )
-                    );
-                    $html = file_get_contents($url, false, stream_context_create($options));
-                } else {
-                    $html = file_get_contents($pageInfo['url']);
-                }
-                usleep(200);
-                return mb_convert_encoding($html, 'UTF-8', 'UTF-8,GBK,GB2312,BIG5');
-            };
-        }
-        if (!isset($this->setGetLinks)) {
-            $this->setGetLinks = function ($str) {
-                preg_match_all('/href=([\'"]?)([^\s><\'"]*)\1/is', $str, $match);
-                $links = isset($match['2']) ? $match[2] : [];
-                return $links;
-            };
-        }
-    }
+
     public function addUrl($pageInfo = [])
     {
+        if (false === $this->invok('on_add_url', [
+            $pageInfo
+        ])) {
+            return;
+        };
+
+        if (!isset($pageInfo['context'])) {
+            $pageInfo['context'] = [];
+        }
+
+        if (isset($this->config['cookie'])) {
+            $pageInfo['cookie'] = $this->config['cookie'];
+        }
+        if (isset($this->config['timeout'])) {
+            $pageInfo['timeout'] = $this->config['timeout'];
+        }
+
         if (!$this->checkUnique($pageInfo)) {
+            $this->invok('on_add_url_fail', [
+                $pageInfo
+            ]);
             return;
         }
         $pageInfo['retry'] = isset($pageInfo['retry']) ? $pageInfo['retry'] + 1 : 0;
         $this->queue->push($pageInfo);
     }
 
-    protected function checkUnique($pageInfo) {
+    protected function checkUnique($pageInfo)
+    {
         if (empty($pageInfo['url'])) {
             return false;
         }
@@ -166,7 +108,7 @@ class SpiderX
     protected function fetchLinks($pageInfo, $html, $data = [])
     {
         if ($pageInfo['type'] == 'list' && !empty($data)) {
-            foreach ($data as $field => $itemList) {
+            foreach ($data as $itemList) {
                 foreach ($itemList as $index => $value) {
                     $sliceData = [];
                     foreach (array_keys($data) as $newKey) {
@@ -187,7 +129,7 @@ class SpiderX
             if (empty($rule['url'])) {
                 continue;
             }
-            if (strpos($rule['url'], '#') === 0 | strpos($rule['url'], '/') === 0) {
+            if (strpos($rule['url'], '#') === 0 || strpos($rule['url'], '/') === 0) {
                 $this->fetchRegularLink($rule, $pageInfo, $html, $data);
             } else {
                 $this->fetchUrlLink($rule, $pageInfo, $html, $data);
