@@ -77,6 +77,7 @@ class Url {
             self::$instance['client'] = new Client([
                 'cookies' => isset($pageInfo['cookie']),
                 'timeout' => $timeout,
+                'http_errors' => false
             ]);
         }
 
@@ -93,9 +94,12 @@ class Url {
 
         $html = '';
         try {
-            $pageInfo['url'] = 'http://blog.sina.com.cn/s/blog_141e5084f0102yhoo.html';
             $response = self::$instance['client']->request($method, $pageInfo['url'], $sendData);
             $html = $response->getBody();
+            $statusCode = $response->getStatusCode();
+            if (!in_array($statusCode, [200])) {
+                Log::debug('http error:' . $statusCode, $pageInfo);
+            }
         } catch (TransferException $e) {
             $html = '';
         } catch (Exception $e) {
