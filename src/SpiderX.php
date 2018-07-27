@@ -128,16 +128,17 @@ class SpiderX extends SpiderXAbstract
         $taskNum = function_exists('\swoole_cpu_num') ? \swoole_cpu_num() * 2 : 1;
         $taskNum = isset($this->config['tasknum']) ? $this->config['tasknum'] : $taskNum;
 
-        if (function_exists('\swoole_process')) {
+        if (class_exists('\swoole_process') && $taskNum > 1) {
             $task = $this;
             $taskList = [];
+            Log::info('开启多进程, nums: ' . $taskNum);
             for($i = 0; $i < $taskNum; $i++) {
-                $process = new swoole_process(function(\swoole_process $worker) use($i, $task, $taskList){
+                $process = new \swoole_process(function(\swoole_process $worker) use($i, $task, $taskList){
                     $task->runTask();
                 });
                 $taskList[$i] = $process->start();
             }
-            swoole_process::wait();
+            \swoole_process::wait();
         } else {
             $this->runTask();
         }
