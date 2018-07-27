@@ -49,6 +49,9 @@ class SpiderX extends SpiderXAbstract
         $this->queue = new Queue($redisConfig);
         $this->uniqueArray = new Unique($redisConfig);
 
+        Log::info('Queue key: ' . $this->queue->getKey());
+        Log::info('uniqueArray key: ' . $this->uniqueArray->getKey());
+
         if ($this->queue->length() > 0 || $this->uniqueArray->length() > 0) {
             $ret = '';
             do {

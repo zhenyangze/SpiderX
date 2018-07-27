@@ -14,9 +14,13 @@ class Unique
 {
     public function __construct($config = [])
     {
-        $this->key = 'SpiderX:' . $config['key'] . ':Queue';
+        $this->key = 'SpiderX:Unique' . $config['key'];
         $this->redis = new \Redis();
         $this->redis->connect($config['host'], $config['port']);
+    }
+
+    public function getKey() {
+        return $this->key;
     }
 
     public function delete()

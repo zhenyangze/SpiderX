@@ -63,7 +63,7 @@ abstract class SpiderXAbstract
             $pageInfo['timeout'] = $this->config['timeout'];
         }
 
-        if (!$this->checkUnique($pageInfo)) {
+        if (false === $this->checkUnique($pageInfo)) {
             $this->invok('on_add_url_fail', [
                 $pageInfo
             ]);
@@ -78,7 +78,8 @@ abstract class SpiderXAbstract
         if (empty($pageInfo['url'])) {
             return false;
         }
-        if (in_array($pageInfo['type'], ['start', 'list'])) {
+
+        if (in_array($pageInfo['type'], ['start'])) {
             return true;
         }
         $pageInfo['context'] = [];
