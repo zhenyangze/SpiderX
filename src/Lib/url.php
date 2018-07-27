@@ -10,6 +10,7 @@
  */
 namespace SpiderX\Lib;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\TransferException;
 
 class Url {
     public static $instance = [];
@@ -92,8 +93,11 @@ class Url {
 
         $html = '';
         try {
+            $pageInfo['url'] = 'http://blog.sina.com.cn/s/blog_141e5084f0102yhoo.html';
             $response = self::$instance['client']->request($method, $pageInfo['url'], $sendData);
             $html = $response->getBody();
+        } catch (TransferException $e) {
+            $html = '';
         } catch (Exception $e) {
             $html = '';
         }
