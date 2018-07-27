@@ -11,6 +11,7 @@
 
 namespace SpiderX\Lib;
 
+date_default_timezone_set('PRC');
 class Log
 {
     public static $LOG_INFO = 'info';
