@@ -12,7 +12,7 @@ namespace SpiderX\Lib;
 
 abstract class SpiderXAbstract
 {
-    protected $config;
+    public $config;
     protected $queue; // 数据队列
     protected $uniqueArray; // 用于检测重复
 
@@ -111,6 +111,9 @@ abstract class SpiderXAbstract
 
     protected function fetchLinks($pageInfo, $html, $data = [])
     {
+        if (empty($html) || empty($pageInfo['url'])) {
+            return;
+        }
         if ($pageInfo['type'] == 'list' && !empty($data)) {
             foreach ($data as $itemList) {
                 foreach ($itemList as $index => $value) {

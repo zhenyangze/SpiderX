@@ -14,8 +14,12 @@ use SpiderX\Lib\Event;
 use SpiderX\Lib\Log;
 use SpiderX\Lib\Queue;
 use SpiderX\Lib\SpiderXAbstract;
+use SpiderX\Lib\Table;
 use SpiderX\Lib\Unique;
 use SpiderX\Lib\Url;
+use SpiderX\Lib\Util;
+use SpiderX\Lib\Worker;
+use Inhere\Console\Utils\Show;
 
 class SpiderX extends SpiderXAbstract
 {
@@ -30,6 +34,8 @@ class SpiderX extends SpiderXAbstract
 
     protected function checkConfig()
     {
+        $this->config['start_time'] = time();
+        $this->config['tasknum'] = isset($this->config['tasknum']) && $this->config['tasknum'] > 1 ? $this->config['tasknum'] : 1;
         if (empty($this->config['name'])) {
             Log::out('配置信息name字段不存在', 'red');
             exit;
@@ -41,9 +47,31 @@ class SpiderX extends SpiderXAbstract
             ];
         }
         $this->config['rule'] = array_column($this->config['rule'], null, 'name');
+
+        // 检查PHP版本
+        if (version_compare(PHP_VERSION, '5.3.0', 'lt')) 
+        {
+            Log::out('PHP 5.3+ is required, currently installed version is: ' . phpversion(), 'red');
+            exit;
+        }
+
+        // 多任务需要pcntl扩展支持
+        if (!function_exists('pcntl_fork')) 
+        {
+            Log::out("Multitasking needs pcntl, the pcntl extension was not found", 'red');
+            exit;
+        }
+
+        // 守护进程需要pcntl扩展支持
+        if (!function_exists('pcntl_fork')) 
+        {
+            Log::out("Daemonize needs pcntl, the pcntl extension was not found", 'red');
+            exit;
+        }
     }
 
-    protected function checkData() {
+    protected function checkData()
+    {
 
         Log::info('Queue key: ' . $this->queue->getKey());
         Log::info('uniqueArray key: ' . $this->uniqueArray->getKey());
@@ -57,8 +85,12 @@ class SpiderX extends SpiderXAbstract
             if ($ret == 'n') {
                 $this->queue->delete();
                 $this->uniqueArray->delete();
+                $this->taskTable->delete();
             }
         }
+
+        $this->config['ori_total_data'] = $this->uniqueArray->length();
+        $this->config['ori_left_data'] = $this->queue->length();
     }
 
     protected function init()
@@ -67,6 +99,10 @@ class SpiderX extends SpiderXAbstract
         $redisConfig['key'] = $this->config['name'];
         $this->queue = new Queue($redisConfig);
         $this->uniqueArray = new Unique($redisConfig);
+
+        $this->taskTable = new Table(array_merge($redisConfig, [
+            'key' => $this->config['name'] . 'Task'
+        ]));
 
         if (!isset($this->setGetHtml)) {
             $this->setGetHtml = function ($pageInfo) {
@@ -110,7 +146,6 @@ class SpiderX extends SpiderXAbstract
             Event::listen('on_retry_page', function ($args) {
                 Log::debug('retry page', $args);
             });
-
         } else {
             Event::listen('on_add_url', function ($args) {
                 Log::info('add page: ' . $args[0]['url']);
@@ -121,37 +156,80 @@ class SpiderX extends SpiderXAbstract
         }
     }
 
-    public function start() {
+    public function start()
+    {
         // 执行前可以添加数据
         $this->invok('on_start');
+        $this->addStartUrl();
 
-        $taskNum = function_exists('\swoole_cpu_num') ? \swoole_cpu_num() * 2 : 1;
-        $taskNum = isset($this->config['tasknum']) ? $this->config['tasknum'] : $taskNum;
+        $task = $this;
 
-        if (class_exists('\swoole_process') && $taskNum > 1) {
-            $task = $this;
-            $taskList = [];
-            Log::info('开启多进程, nums: ' . $taskNum);
-            for($i = 0; $i < $taskNum; $i++) {
-                $process = new \swoole_process(function(\swoole_process $worker) use($i, $task, $taskList){
-                    $task->runTask();
-                });
-                $taskList[$i] = $process->start();
+        $worker = new Worker();
+        $worker->run_once = isset($this->config['run_once']) ? $this->config['run_once'] : true;
+        $worker->count = $this->config['tasknum'] + 2;
+        $worker->on_worker_start = function ($childWorker) use ($task) {
+            $task->init();
+
+            $task->registerTask($childWorker);
+
+            if ($childWorker->worker_id == 1) {
+                $task->report();
+            } else {
+                $task->runTask();
             }
-            \swoole_process::wait();
-        } else {
-            $this->runTask();
-        }
+
+            $task->unRegisterTask($childWorker);
+
+        };
+        $worker->run();
+
         $this->invok('on_finish');
+    }
+
+    protected function report()
+    {
+        $allStop = false;
+        while(!$allStop) {
+            $arr = array(27, 91, 72, 27, 91, 50, 74);
+            foreach ($arr as $a) 
+            {
+                print chr($a);
+            }
+            $totalNum = $this->uniqueArray->length();
+            $leftNum = $this->queue->length();
+
+            $data = [
+                'spider    name' => $this->config['name'],
+                'spider version' => '1.0.0',
+                'php    version' => phpversion(),
+                ' ',
+                'start time' => date('Y-m-d H:i:s', $this->config['start_time']),
+                'run   time' => Util::time2second(time() - $this->config['start_time']),
+                ' ',
+                'task  num' => $this->config['tasknum'],
+                'queue num' => $totalNum,
+                'left  num' => $leftNum,
+                'percentum (%)' => (100 - Util::getPercent($leftNum, $totalNum)),
+                'speed num (s)' => round((($totalNum - $this->config['ori_total_data']) - ($leftNum - $this->config['ori_left_data'])) / (time() - $this->config['start_time']), 2),
+            ];
+
+            Show::panel($data, 'Spider Info', [
+                'borderChar' => '-'
+            ]);
+
+            $allStop = true;
+            for($i = 2; $i < $this->config['tasknum'] + 2; $i++) {
+                if ($this->checkIsRun($i)) {
+                    $allStop = false;
+                    break;
+                }
+            }
+            sleep(1);
+        }
     }
 
     protected function runTask()
     {
-        $this->init();
-
-        // 添加首页
-        $this->addStartUrl();
-
         while ($this->queue->length()) {
             $pageInfo = $this->queue->pop();
 
@@ -196,6 +274,8 @@ class SpiderX extends SpiderXAbstract
 
             // 检测子链
             $this->fetchLinks($pageInfo, $html, $data);
+
+            //$this->report();
         }
     }
 
@@ -211,5 +291,26 @@ class SpiderX extends SpiderXAbstract
                 ]);
             });
         }
+    }
+
+    protected function registerTask($childWorker) {
+        $this->taskTable->set($childWorker->worker_id, [
+            'taskid' => $childWorker->worker_id,
+            'pid' => $childWorker->worker_pid,
+            'mem' => Util::memoryGetUsage(),
+        ]);
+    }
+
+    protected function unRegisterTask($childWorker) {
+        $this->taskTable->remove($childWorker->worker_id);
+    }
+
+    protected function checkIsRun($workerId) {
+        $workInfo = $this->taskTable->get($workerId);
+        $pid = $workInfo['pid'];
+        if (empty($pid)) {
+            return false;
+        }
+        return posix_getpgid($pid);
     }
 }

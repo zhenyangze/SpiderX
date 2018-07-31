@@ -6,7 +6,8 @@
         "php": ">=7.0",
         "guzzlehttp/guzzle": "^6.3",
         "league/climate": "dev-master",
-        "katzgrau/klogger": "dev-master"
+        "katzgrau/klogger": "dev-master",
+        "inhere/console": "dev-master"
     },
     "license": "MIT",
     "authors": [

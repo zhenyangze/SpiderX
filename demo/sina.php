@@ -13,6 +13,7 @@ include_once __DIR__ . '/../vendor/autoload.php';
 
 $config = [
     'name' => 'sina',
+    'tasknum' => 2,
     'start' => [
         'http://roll.news.sina.com.cn/news/gnxw/gdxw1/index.shtml',
     ],
@@ -98,15 +99,12 @@ function saveDataFile($name, $data = [])
 $spider = new SpiderX\SpiderX($config);
 $spider->on_fetch_detail = function ($pageInfo, $html, $data) {
     saveDataFile($pageInfo['name'], $data);
-    echo '[' . $pageInfo['type'] . ']' . $pageInfo['url'] . "\n";
 };
 $spider->on_fetch_blog_detail = function ($pageInfo, $html, $data) {
     saveDataFile($pageInfo['name'], $data);
-    echo '[' . $pageInfo['type'] . ']' . $pageInfo['url'] . "\n";
 };
 
 $spider->on_fetch_list = function ($pageInfo, $html, $data) {
     saveDataFile($pageInfo['name'], $data);
-    echo '[' . $pageInfo['type'] . ']' . $pageInfo['url'] . "\n";
 };
 $spider->start();
