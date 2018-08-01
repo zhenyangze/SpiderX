@@ -84,6 +84,7 @@ class SpiderX extends SpiderXAbstract
         }
         
         $this->lockFile = sys_get_temp_dir() . md5($this->config['name'] . __FILE__);
+        @touch($this->lockFile);
     }
 
     /**
