@@ -84,7 +84,7 @@ class Url {
         $method = isset($pageInfo['method']) ? strtoupper($pageInfo['method']) : 'GET';
         $sendData = [];
         if ($method == 'POST') {
-            $query = isset($pageInfo['query']) ? $query : '';
+            $query = isset($pageInfo['query']) ? $pageInfo['query'] : '';
             if(is_array($pageInfo['query'])) {
                 $sendData['form_params'] = $query;
             } else {
