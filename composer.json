@@ -1,6 +1,7 @@
 {
     "name": "yangze/spiderx",
     "description": "php SpiderX",
+    "homepage": "https://github.com/zhenyangze/SpiderX",
     "type": "library",
     "keywords": [
         "framework", 
@@ -12,9 +13,9 @@
     "require": {
         "php": "^7.0",
         "guzzlehttp/guzzle": "~6.3",
-        "league/climate": "dev-master",
-        "katzgrau/klogger": "dev-master",
-        "inhere/console": "dev-master"
+        "league/climate": "~3.4@dev",
+        "katzgrau/klogger": "~1.2@dev",
+        "inhere/console": "~2.3@dev"
     },
     "suggest": {
         "ext-pcntl、ext-redis": "For better performance. "
