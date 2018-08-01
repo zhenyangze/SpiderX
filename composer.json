@@ -12,9 +12,9 @@
     "require": {
         "php": "^7.0",
         "guzzlehttp/guzzle": "~6.3",
-        "league/climate": "~3.4",
-        "katzgrau/klogger": "~1.2",
-        "inhere/console": "~2.3"
+        "league/climate": "dev-master",
+        "katzgrau/klogger": "dev-master",
+        "inhere/console": "dev-master"
     },
     "suggest": {
         "ext-pcntl、ext-redis": "For better performance. "
