@@ -229,11 +229,33 @@ class Util
             return false;
         }
     }
-    public static function getPercent($num1, $num2) {
+    public static function getPercent($num1, $num2)
+    {
         if ($num2 <= 0) {
             return 0;
         }
 
         return round(($num1/$num2) * 100, 2);
+    }
+    public static function daemonize()
+    {
+        $pid = pcntl_fork();
+        if ($pid == -1) {
+            die("fork(1) failed!\n");
+        } elseif ($pid > 0) {
+        //让由用户启动的进程退出
+            exit(0);
+        }
+
+        //建立一个有别于终端的新session以脱离终端
+        posix_setsid();
+
+        $pid = pcntl_fork();
+        if ($pid == -1) {
+            die("fork(2) failed!\n");
+        } elseif ($pid > 0) {
+        //父进程退出, 剩下子进程成为最终的独立进程
+            exit(0);
+        }
     }
 }

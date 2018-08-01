@@ -89,7 +89,7 @@ function saveDataFile($name, $data = [])
     if (!is_dir(__DIR__ . '/data/')) {
         @mkdir(__DIR__ . '/data', 0755, true);
     }
-    $file = __DIR__ . '/data/' . $name . '.csv';
+    $file = __DIR__ . '/data/sina_' . $name . '.csv';
     if (!file_exists($file)) {
         file_put_contents($file, implode(',', array_keys($data)) . "\n", FILE_APPEND | LOCK_EX);
     }

@@ -14,6 +14,7 @@ include_once __DIR__ . '/../vendor/autoload.php';
 $config = [
     'name' => 'jb51',
     'tasknum' => 2,
+    //'modal' => 'debug', // debug,daemonize,默认为实时报表模式
     'start' => [
         'https://www.jb51.net/list/list_6_1.htm',
     ],
@@ -26,7 +27,7 @@ $config = [
         [
             'name' => 'content',
             'type' => 'detail',
-            'url' => '#article/13\d+.htm#',
+            'url' => '#article/1\d+.htm#',
             'data' => [
                 'title' => function ($pageInfo, $html, $data) {
                     preg_match_all('/<title>(.*?)<\/title>/i', $html, $matches);

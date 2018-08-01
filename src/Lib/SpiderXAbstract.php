@@ -10,19 +10,56 @@
  */
 namespace SpiderX\Lib;
 
+/**
+ * SpiderXAbstract
+ */
 abstract class SpiderXAbstract
 {
+    /**
+     * config
+     */
     public $config;
-    protected $queue; // 数据队列
-    protected $uniqueArray; // 用于检测重复
+    /**
+     * 数据队列
+     */
+    protected $queue;
+    /**
+     * 用于检测重复
+     */
+    protected $uniqueArray;
 
+    /**
+     * 任务表
+     */
+    protected $taskTable;
+
+    /**
+     * start
+     *
+     * @return
+     */
     abstract public function start();
 
+    /**
+     * __construct
+     *
+     * @param $config
+     *
+     * @return
+     */
     public function __construct($config = [])
     {
         $this->config = $config;
     }
 
+    /**
+     * __call
+     *
+     * @param $method
+     * @param $args
+     *
+     * @return
+     */
     public function __call($method, $args)
     {
         if (isset($this->$method)) {
@@ -30,12 +67,22 @@ abstract class SpiderXAbstract
         }
     }
 
+    /**
+     * invok
+     *
+     * @param $func
+     * @param $args
+     * @param $default
+     *
+     * @return
+     */
     protected function invok($func, $args = [], $default = [])
     {
         $eventName = $func;
         if (stristr($eventName, 'on_load') || stristr($eventName, 'on_fetch')) {
             $eventName = str_ireplace(strrchr($eventName, '_'), '', $eventName);
         }
+        
         Event::trigger($eventName, $args);
 
         if (isset($this->$func)) {
@@ -44,6 +91,13 @@ abstract class SpiderXAbstract
     }
 
 
+    /**
+     * addUrl
+     *
+     * @param $pageInfo
+     *
+     * @return
+     */
     public function addUrl($pageInfo = [])
     {
         if (false === $this->invok('on_add_url', [
@@ -73,6 +127,13 @@ abstract class SpiderXAbstract
         $this->queue->push($pageInfo);
     }
 
+    /**
+     * checkUnique
+     *
+     * @param $pageInfo
+     *
+     * @return
+     */
     protected function checkUnique($pageInfo)
     {
         if (empty($pageInfo['url'])) {
@@ -92,6 +153,14 @@ abstract class SpiderXAbstract
         return true;
     }
 
+    /**
+     * fetchData
+     *
+     * @param $pageInfo
+     * @param $html
+     *
+     * @return
+     */
     protected function fetchData($pageInfo, $html)
     {
         $name = $pageInfo['name'];
@@ -109,6 +178,15 @@ abstract class SpiderXAbstract
         return $data;
     }
 
+    /**
+     * fetchLinks
+     *
+     * @param $pageInfo
+     * @param $html
+     * @param $data
+     *
+     * @return
+     */
     protected function fetchLinks($pageInfo, $html, $data = [])
     {
         if (empty($html) || empty($pageInfo['url'])) {
@@ -130,6 +208,15 @@ abstract class SpiderXAbstract
     }
 
     // 检索页面中的连接
+    /**
+     * fetchSimpleLinks
+     *
+     * @param $pageInfo
+     * @param $html
+     * @param $data
+     *
+     * @return
+     */
     protected function fetchSimpleLinks($pageInfo, $html, $data = [])
     {
         foreach ($this->config['rule'] as $rule) {
@@ -144,6 +231,16 @@ abstract class SpiderXAbstract
         }
     }
 
+    /**
+     * fetchRegularLink
+     *
+     * @param $rule
+     * @param $pageInfo
+     * @param $html
+     * @param $data
+     *
+     * @return
+     */
     protected function fetchRegularLink($rule, $pageInfo, $html, $data = [])
     {
         $links = $this->setGetLinks($html);
@@ -165,6 +262,16 @@ abstract class SpiderXAbstract
         }
     }
 
+    /**
+     * fetchUrlLink
+     *
+     * @param $rule
+     * @param $pageInfo
+     * @param $html
+     * @param $data
+     *
+     * @return
+     */
     protected function fetchUrlLink($rule, $pageInfo, $html = '', $data = [])
     {
         if (empty($rule['url'])) {
@@ -187,10 +294,10 @@ abstract class SpiderXAbstract
         }
         array_walk($urlList, function ($url) use ($rule, $data) {
             $this->addUrl([
-                'url' => $url,
-                'type' => $rule['type'],
-                'name' => $rule['name'],
-                'context' => $data,
+            'url' => $url,
+            'type' => $rule['type'],
+            'name' => $rule['name'],
+            'context' => $data,
             ]);
         });
     }

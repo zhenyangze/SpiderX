@@ -10,6 +10,8 @@
  */
 namespace SpiderX;
 
+use Inhere\Console\IO\Input;
+use Inhere\Console\IO\Output;
 use SpiderX\Lib\Event;
 use SpiderX\Lib\Log;
 use SpiderX\Lib\Queue;
@@ -21,17 +23,32 @@ use SpiderX\Lib\Util;
 use SpiderX\Lib\Worker;
 use Inhere\Console\Utils\Show;
 
+/**
+ *
+ */
 class SpiderX extends SpiderXAbstract
 {
+
+    protected $lockFile = '';
+    /**
+     * __construct
+     *
+     * @param $config
+     *
+     * @return
+     */
     public function __construct($config = [])
     {
         $this->config = $config;
         $this->checkConfig();
         $this->init();
-        $this->checkData();
-        $this->addListener();
-    }
+   }
 
+    /**
+     * checkConfig
+     *
+     * @return
+     */
     protected function checkConfig()
     {
         $this->config['start_time'] = time();
@@ -49,27 +66,31 @@ class SpiderX extends SpiderXAbstract
         $this->config['rule'] = array_column($this->config['rule'], null, 'name');
 
         // 检查PHP版本
-        if (version_compare(PHP_VERSION, '5.3.0', 'lt')) 
-        {
+        if (version_compare(PHP_VERSION, '5.3.0', 'lt')) {
             Log::out('PHP 5.3+ is required, currently installed version is: ' . phpversion(), 'red');
             exit;
         }
 
         // 多任务需要pcntl扩展支持
-        if (!function_exists('pcntl_fork')) 
-        {
+        if (!function_exists('pcntl_fork')) {
             Log::out("Multitasking needs pcntl, the pcntl extension was not found", 'red');
             exit;
         }
 
         // 守护进程需要pcntl扩展支持
-        if (!function_exists('pcntl_fork')) 
-        {
+        if (!function_exists('pcntl_fork')) {
             Log::out("Daemonize needs pcntl, the pcntl extension was not found", 'red');
             exit;
         }
+        
+        $this->lockFile = sys_get_temp_dir() . md5($this->config['name'] . __FILE__);
     }
 
+    /**
+     * checkData
+     *
+     * @return
+     */
     protected function checkData()
     {
 
@@ -93,6 +114,65 @@ class SpiderX extends SpiderXAbstract
         $this->config['ori_left_data'] = $this->queue->length();
     }
 
+    /**
+     * registerCommand 
+     *
+     * @return null 
+     */
+    protected function registerCommand() {
+        $task = $this;
+        $meta = [
+            'name' => 'php SpiderX',
+            'version' => '1.0.0',
+        ];
+        $input = new Input;
+        $output = new Output;
+        $app = new \Inhere\Console\Application($meta, $input, $output);
+        $app->command('run', function (Input $in, Output $out) use ($task) {
+            $task->config['modal'] = 'report';
+            $task->prepare();
+            $task->startTask();
+        }, 'run script with report');
+        $app->command('daemon', function (Input $in, Output $out) use ($task) {
+            $task->config['modal'] = 'daemon';
+            $task->prepare();
+            $task->startTask();
+        }, 'run script in daemon modal');
+        $app->command('debug', function (Input $in, Output $out) use ($task) {
+            $task->config['modal'] = 'debug';
+            $task->prepare();
+            $task->startTask();
+        }, 'run script in debug modal');
+        $app->command('status', function (Input $in, Output $out) use ($task) {
+            $out->info('LockFile: ' . $task->lockFile);
+            $contents = @file_get_contents($task->lockFile);
+            if (empty($contents)) {
+                $out->info('no task');
+                return;
+            }
+            $lineList = explode("\n", $contents);
+            foreach($lineList as $line) {
+                if (empty($line)) {
+                    continue;
+                }
+                $taskInfo = @json_decode($line, true);
+                $isRun = posix_getpgid($taskInfo['pid']);
+                $str = sprintf('[%d]Pid:%d Status:%s', $taskInfo['taskid'], $taskInfo['pid'], $isRun ? 'Running' : 'Stopped');
+                $out->info($str);
+            }
+        }, 'show the SpiderX status');
+        $app->command('stop', function (Input $in, Output $out) use ($task) {
+            $task->stopTask();
+            $out->info('Stopped SpiderX');
+        }, 'stop all the spiderX Process');
+        $app->run();
+    }
+
+    /**
+     * init
+     *
+     * @return
+     */
     protected function init()
     {
         $redisConfig = $this->config['redis'];
@@ -116,6 +196,11 @@ class SpiderX extends SpiderXAbstract
         }
     }
 
+    /**
+     * addListener
+     *
+     * @return
+     */
     protected function addListener()
     {
         Event::listen('on_start', function () {
@@ -156,12 +241,70 @@ class SpiderX extends SpiderXAbstract
         }
     }
 
-    public function start()
+    /**
+     * prepare 
+     *
+     * @return 
+     */
+    protected function prepare() {
+        $this->checkData();
+        $this->addListener();
+    }
+
+    /**
+     * start 
+     *
+     * @return 
+     */
+    public function start() {
+        $this->registerCommand();
+    }
+
+    /**
+     * start
+     *
+     * @return
+     */
+    public function startTask()
     {
+        if (file_exists($this->lockFile)) {
+            @unlink($this->lockFile);
+            @touch($this->lockFile);
+        }
+ 
+        if ($this->config['modal'] == 'daemon') {
+            Util::daemonize();
+        }
         // 执行前可以添加数据
         $this->invok('on_start');
         $this->addStartUrl();
 
+        if ($this->config['modal'] == 'debug') {
+            $this->startDebug();
+        } else {
+            $this->startProcess();
+        }
+
+        $this->invok('on_finish');
+    }
+
+    /**
+     * startDebug
+     *
+     * @return
+     */
+    protected function startDebug()
+    {
+        $this->runTask();
+    }
+
+    /**
+     * startProcess
+     *
+     * @return
+     */
+    protected function startProcess()
+    {
         $task = $this;
 
         $worker = new Worker();
@@ -172,27 +315,32 @@ class SpiderX extends SpiderXAbstract
 
             $task->registerTask($childWorker);
 
-            if ($childWorker->worker_id == 1) {
+            if ($childWorker->worker_id == 1 && $this->config['modal'] == 'report') {
                 $task->report();
             } else {
                 $task->runTask();
             }
 
             $task->unRegisterTask($childWorker);
-
         };
         $worker->run();
-
-        $this->invok('on_finish');
     }
 
+    /**
+     * report
+     *
+     * @return null
+     */
     protected function report()
     {
+        if ($this->config['modal'] == 'daemon') {
+            return;
+        }
+
         $allStop = false;
-        while(!$allStop) {
+        while (!$allStop) {
             $arr = array(27, 91, 72, 27, 91, 50, 74);
-            foreach ($arr as $a) 
-            {
+            foreach ($arr as $a) {
                 print chr($a);
             }
             $totalNum = $this->uniqueArray->length();
@@ -218,16 +366,24 @@ class SpiderX extends SpiderXAbstract
             ]);
 
             $allStop = true;
-            for($i = 2; $i < $this->config['tasknum'] + 2; $i++) {
+            for ($i = 2; $i < $this->config['tasknum'] + 2; $i++) {
                 if ($this->checkIsRun($i)) {
                     $allStop = false;
                     break;
                 }
             }
             sleep(1);
+            if ($this->checkShouldExit()) {
+                break;
+            }
         }
     }
 
+    /**
+     * runTask
+     *
+     * @return null
+     */
     protected function runTask()
     {
         while ($this->queue->length()) {
@@ -275,10 +431,19 @@ class SpiderX extends SpiderXAbstract
             // 检测子链
             $this->fetchLinks($pageInfo, $html, $data);
 
+            // 检测是否要退出
+            if ($this->checkShouldExit()) {
+                break;
+            }
             //$this->report();
         }
     }
 
+    /**
+     * addStartUrl
+     *
+     * @return null
+     */
     protected function addStartUrl()
     {
         if (!empty($this->config['start'])) {
@@ -293,7 +458,19 @@ class SpiderX extends SpiderXAbstract
         }
     }
 
-    protected function registerTask($childWorker) {
+    /**
+     * registerTask
+     *
+     * @param $childWorker
+     *
+     * @return null
+     */
+    protected function registerTask($childWorker)
+    {
+        @file_put_contents($this->lockFile, json_encode([
+            'taskid' => $childWorker->worker_id,
+            'pid' => $childWorker->worker_pid,
+        ]) . "\n", FILE_APPEND | LOCK_EX);
         $this->taskTable->set($childWorker->worker_id, [
             'taskid' => $childWorker->worker_id,
             'pid' => $childWorker->worker_pid,
@@ -301,16 +478,48 @@ class SpiderX extends SpiderXAbstract
         ]);
     }
 
-    protected function unRegisterTask($childWorker) {
+    /**
+     * unRegisterTask
+     *
+     * @param $childWorker
+     *
+     * @return null
+     */
+    protected function unRegisterTask($childWorker)
+    {
         $this->taskTable->remove($childWorker->worker_id);
     }
 
-    protected function checkIsRun($workerId) {
+    /**
+     * checkIsRun
+     *
+     * @param $workerId
+     *
+     * @return int
+     */
+    protected function checkIsRun($workerId)
+    {
         $workInfo = $this->taskTable->get($workerId);
         $pid = $workInfo['pid'];
         if (empty($pid)) {
             return false;
         }
         return posix_getpgid($pid);
+    }
+
+    /**
+     * stopTask
+     *
+     * @param $workerId
+     *
+     * @return int
+     */
+    protected function stopTask()
+    {
+        @file_put_contents($this->lockFile, 0);
+    }
+
+    protected function checkShouldExit() {
+        return  '0' === file_get_contents($this->lockFile);
     }
 }

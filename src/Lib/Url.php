@@ -96,7 +96,7 @@ class Url {
         try {
             $response = self::$instance['client']->request($method, $pageInfo['url'], $sendData);
             $html = $response->getBody();
-            $html = @mb_convert_encoding($html, 'UTF-8', 'UTF-8,GBK,GB2312,BIG5');
+            $html = @mb_convert_encoding((string)$html, 'UTF-8', 'UTF-8,GBK,GB2312,BIG5,LATIN1');
             $statusCode = $response->getStatusCode();
             if (!in_array($statusCode, [200])) {
                 Log::debug('http error:' . $statusCode, $pageInfo);
