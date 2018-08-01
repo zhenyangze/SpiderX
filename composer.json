@@ -1,13 +1,16 @@
 {
     "name": "yangze/spiderx",
-    "description": "php spider with swoole",
+    "description": "php spider",
     "type": "library",
     "require": {
-        "php": ">=7.0",
+        "php": ">=5.5.3",
         "guzzlehttp/guzzle": "^6.3",
         "league/climate": "dev-master",
         "katzgrau/klogger": "dev-master",
         "inhere/console": "dev-master"
+    },
+    "suggest": {
+        "ext-pcntl、ext-redis": "For better performance. "
     },
     "license": "MIT",
     "authors": [
@@ -16,7 +19,6 @@
             "email": "zhenyangze@gmail.com"
         }
     ],
-    "minimum-stability": "dev",
     "autoload": {
         "psr-4": {
             "SpiderX\\": "src/"
