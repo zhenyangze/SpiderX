@@ -1,7 +1,12 @@
 {
     "name": "yangze/spiderx",
-    "description": "php spider",
+    "description": "php SpiderX",
     "type": "library",
+    "keywords": [
+        "framework", 
+        "php spider",
+        "SpiderX"
+    ],
     "require": {
         "php": ">=5.5.3",
         "guzzlehttp/guzzle": "^6.3",
