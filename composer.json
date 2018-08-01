@@ -8,11 +8,11 @@
         "SpiderX"
     ],
     "require": {
-        "php": ">=5.5.3",
+        "php": "^5.6|^7.0",
         "guzzlehttp/guzzle": "^6.3",
-        "league/climate": "dev-master",
-        "katzgrau/klogger": "dev-master",
-        "inhere/console": "dev-master"
+        "league/climate": "^3.4.0",
+        "katzgrau/klogger": "^1.2.0",
+        "inhere/console": "^2.3.3"
     },
     "suggest": {
         "ext-pcntl、ext-redis": "For better performance. "
