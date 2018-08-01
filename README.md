@@ -8,6 +8,36 @@ php爬虫框架。
 > * 不限制采集方式，可以用正则，Xpath，字符串截取。
 > * 无限层级采集，可以实现列表->详情，列表->列表->详情，详情->详情等任意姿势采集。
 > * 队列去重，可以重新抓取，也可以分次采集。
+> * 支持调试模式，实时报表，守护模式。
+
+## 执行方式
+```shell
+Usage:
+  demo/sina.php {command} [--opt -v -h ...] [arg0 arg1 arg2=value2 ...]
+
+Options:
+      --debug     Setting the application runtime debug level
+      --profile   Display timing and memory usage information
+      --no-color  Disable color/ANSI for message output
+  -h, --help      Display this help message
+  -V, --version   Show application version information
+
+Internal Commands:
+  help      Show application help information
+  list      List all group and alone commands
+  version   Show application version information
+
+Available Commands:
+
+- Alone Commands
+  daemon    Run script in daemon modal
+  debug     Run script in debug modal
+  run       Run script with report
+  status    Show the SpiderX status
+  stop      Stop all the spiderX Process
+
+More command information, please use: demo/sina.php {command} -h
+```
 
 ## 代码参考(参考demo目录)
 ```php
@@ -49,5 +79,5 @@ $spider->start();
 
 - [ ] 脚手架，自动生成代码。
 - [ ] 消息通知。
-- [ ] 命令行效果。
-- [ ] 异步多线程。
+- [x] 命令行效果。
+- [x] 异步多线程。
