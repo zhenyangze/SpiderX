@@ -37,4 +37,8 @@ class Unique
     {
         return $this->redis->sadd($this->key, $value);
     }
+
+    public function remove($key) {
+        return $this->redis->sRem($this->key, $key);
+    }
 }

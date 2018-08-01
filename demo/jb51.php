@@ -27,7 +27,7 @@ $config = [
         [
             'name' => 'content',
             'type' => 'detail',
-            'url' => '#article/1\d+.htm#',
+            'url' => '#article/\d+.htm#',
             'data' => [
                 'title' => function ($pageInfo, $html, $data) {
                     preg_match_all('/<title>(.*?)<\/title>/i', $html, $matches);

@@ -106,9 +106,11 @@ class SpiderX extends SpiderXAbstract
             if ($ret == 'n') {
                 $this->queue->delete();
                 $this->uniqueArray->delete();
-                $this->taskTable->delete();
             }
         }
+
+        $this->runningQueue->delete();
+        $this->taskTable->delete();
 
         $this->config['ori_total_data'] = $this->uniqueArray->length();
         $this->config['ori_left_data'] = $this->queue->length();
@@ -182,6 +184,9 @@ class SpiderX extends SpiderXAbstract
 
         $this->taskTable = new Table(array_merge($redisConfig, [
             'key' => $this->config['name'] . 'Task'
+        ]));
+        $this->runningQueue = new Unique(array_merge($redisConfig, [
+            'key' => $this->config['name'] . 'Running'
         ]));
 
         if (!isset($this->setGetHtml)) {
@@ -309,7 +314,7 @@ class SpiderX extends SpiderXAbstract
 
         $worker = new Worker();
         $worker->run_once = isset($this->config['run_once']) ? $this->config['run_once'] : true;
-        $worker->count = $this->config['tasknum'] + 2;
+        $worker->count = $this->config['tasknum'] + 1;
         $worker->on_worker_start = function ($childWorker) use ($task) {
             $task->init();
 
@@ -366,7 +371,7 @@ class SpiderX extends SpiderXAbstract
             ]);
 
             $allStop = true;
-            for ($i = 2; $i < $this->config['tasknum'] + 2; $i++) {
+            for ($i = 2; $i < $this->config['tasknum'] + 1; $i++) {
                 if ($this->checkIsRun($i)) {
                     $allStop = false;
                     break;
@@ -386,13 +391,21 @@ class SpiderX extends SpiderXAbstract
      */
     protected function runTask()
     {
-        while ($this->queue->length()) {
+        while ($this->queue->length() || $this->runningQueue->length()) {
             $pageInfo = $this->queue->pop();
+
+            if (empty($pageInfo)) {
+                sleep(1);
+                continue;
+            }
+
+            $this->runningQueue->add(md5(serialize($pageInfo)));
 
             // 加载前校验
             if (false === $this->invok('on_loadding_' . $pageInfo['name'], [
                 $pageInfo
             ], true)) {
+            $this->runningQueue->remove(md5(serialize($pageInfo)));
                 continue;
             }
 
@@ -403,6 +416,7 @@ class SpiderX extends SpiderXAbstract
                 $pageInfo,
                 $html,
             ], true)) {
+                $this->runningQueue->remove(md5(serialize($pageInfo)));
                 continue;
             }
 
@@ -410,9 +424,11 @@ class SpiderX extends SpiderXAbstract
                 if (false === $this->invok('on_retry_page', [
                     $pageInfo
                 ])) {
+                    $this->runningQueue->remove(md5(serialize($pageInfo)));
                     continue;
                 }
                 $this->addUrl($pageInfo);
+                $this->runningQueue->remove(md5(serialize($pageInfo)));
                 continue;
             }
 
@@ -430,6 +446,8 @@ class SpiderX extends SpiderXAbstract
 
             // 检测子链
             $this->fetchLinks($pageInfo, $html, $data);
+
+            $this->runningQueue->remove(md5(serialize($pageInfo)));
 
             // 检测是否要退出
             if ($this->checkShouldExit()) {
