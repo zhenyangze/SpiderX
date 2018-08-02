@@ -364,7 +364,7 @@ class SpiderX extends SpiderXAbstract
                 'queue num' => $totalNum,
                 'left  num' => $leftNum,
                 'percentum (%)' => (100 - Util::getPercent($leftNum, $totalNum)),
-                'speed num (s)' => round((($totalNum - $this->config['ori_total_data']) - ($leftNum - $this->config['ori_left_data'])) / (time() - $this->config['start_time']), 2),
+                'speed num (s)' => (time() - $this->config['start_time']) > 0 ? round((($totalNum - $this->config['ori_total_data']) - ($leftNum - $this->config['ori_left_data'])) / (time() - $this->config['start_time']), 2) : 0,
             ];
 
             Show::panel($data, 'Spider Info', [
