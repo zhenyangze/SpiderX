@@ -85,11 +85,15 @@ class Url {
         $sendData = [];
         if ($method == 'POST') {
             $query = isset($pageInfo['query']) ? $pageInfo['query'] : '';
-            if(is_array($pageInfo['query'])) {
+            if(is_array($query)) {
                 $sendData['form_params'] = $query;
             } else {
                 $sendData['body'] = $query;
             }
+        }
+
+        if (isset($pageInfo['extra'])) {
+            $sendData = array_merge($sendData, $pageInfo['extra']);
         }
 
         $html = '';
