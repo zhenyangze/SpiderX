@@ -315,7 +315,7 @@ class SpiderX extends SpiderXAbstract
 
         $worker = new Worker();
         $worker->run_once = isset($this->config['run_once']) ? $this->config['run_once'] : true;
-        $worker->count = $this->config['tasknum'] + 1;
+        $worker->count = ($this->config['modal'] == 'report') ? $this->config['tasknum'] + 1 : $this->config['tasknum'];
         $worker->on_worker_start = function ($childWorker) use ($task) {
             $task->init();
 
@@ -372,7 +372,7 @@ class SpiderX extends SpiderXAbstract
             ]);
 
             $allStop = true;
-            for ($i = 2; $i < $this->config['tasknum'] + 1; $i++) {
+            for ($i = 2; $i <= $this->config['tasknum'] + 1; $i++) {
                 if ($this->checkIsRun($i)) {
                     $allStop = false;
                     break;
