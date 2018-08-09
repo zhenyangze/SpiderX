@@ -1,6 +1,4 @@
 # php爬虫脚本
-
-------
 - 框架只做分发，不做数据处理，需要自己在回调中定制。
 - 不限制采集方式，可以用正则，Xpath，字符串截取。
 - 无限层级采集，可以实现列表->详情，列表->列表->详情，详情->详情等任意姿势采集。
@@ -8,6 +6,7 @@
 - 支持调试模式，实时报表，守护模式。
 
 ## 安装依赖
+
 | 环境 | 说明 |
 |-------:|--------|
 | php | >5.6,最好是php7以上 |
@@ -55,18 +54,19 @@ php index.php run
 ```
 
 ## 配置说明
+
 | 字段 | 类型 | 说明 |
-|--------|--------|
-|name| string | 任务名称，队列名称根据name值生成。如果要做分布式的，可以选择用相同的name值 |
+|--------:|--------|--------|
+|name   | string | 任务名称，队列名称根据name值生成。如果要做分布式的，可以选择用相同的name值 |
 |tasknum| int | 任务数量，默认为1|
-|start| array |采集入口url|
-|rule| array |采集规则，具体参考下方说明|
+|start  | array |采集入口url|
+|rule   | array |采集规则，具体参考下方说明|
 
 ### rule值说明
 rule值为数组形式，每个二级元素为一个单元。
 
 | 字段 | 类型 | 说明 |
-|--------|--------|
+|--------|--------|--------|
 |name| string | 任务名称，队列名称根据name值生成。如果要做分布式的，可以选择用相同的name值 |
 |name| string | 页面类型，选项为list 或者detail |
 |url| string |入口url,有2种形式，一种是'#article_\d+#'这样的正则，从各个页面中抓取；一种是取其他单元的name值与所取单元的data值组合，比如一个单元name为news_list,data中有个元素为url,则组合成news_list.url赋值给当前字段|
@@ -200,11 +200,13 @@ More command information, please use: demo/sina.php {command} -h
 参考demo目录
 
 ## 效果参考
-命令行：
+### 命令行
+![command](https://github.com/zhenyangze/Spiderx/blob/master/demo/img/command.jpg?raw=true)
 
-报表模式：
+### 报表模式
+![report](https://raw.githubusercontent.com/zhenyangze/Spiderx/master/demo/img/spiderx.jpg)
 
-守护模式：
+### 守护模式：
 运行后看不到，不截图了。
 
 
