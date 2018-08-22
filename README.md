@@ -136,7 +136,7 @@ on_loaded_{news,需要替换不同的name值} = function($pageInfo, $html) {
 ```
 解析页面数据后回调，一般用于保存数据
 ```php
-on_loadding_{news,需要替换不同的name值} = function($pageInfo, $html, $data) {
+on_fetch_{news,需要替换不同的name值} = function($pageInfo, $html, $data) {
 	//data值为解析的数据
 }
 ```
