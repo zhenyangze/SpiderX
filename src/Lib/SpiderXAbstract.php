@@ -100,6 +100,14 @@ abstract class SpiderXAbstract
      */
     public function addUrl($pageInfo = [])
     {
+        if (empty($pageInfo['name'])) {
+            Log::out('配置信息name字段不存在', 'red');
+            return;
+        }
+        if (empty($pageInfo['type'])) {
+            Log::out('配置信息type字段不存在', 'red');
+            return;
+        }
         if (false === $this->invok('on_add_url', [
             $pageInfo
         ])) {

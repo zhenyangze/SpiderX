@@ -64,7 +64,7 @@ class Util
             array_pop($trArr[$i]);  //  去处尾部多余的元素
         }
         for ($i=0; $i < count($trArr); $i++) {
-            for ($j = 0; $j < count($trArr[$j]); $j++) {
+            for ($j = 0; isset($trArr[$j]) && $j < count($trArr[$j]); $j++) {
                 if (preg_match('/colspan=[\'"]*(\d+)[\'"]*/i', $trArr[$i][$j], $regs)) {    //  如果跨列
                     $t = array();
                     while (--$regs[1]  >  0) {//  补足差额
