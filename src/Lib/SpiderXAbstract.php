@@ -259,6 +259,7 @@ abstract class SpiderXAbstract
             $link = Url::rel2abs($link, $pageInfo['url']);
             if (preg_match('#' . $regx . '#is', $link)) {
                 // 符合条件
+                $link = htmlspecialchars_decode($link);
                 $subPageInfo = [
                     'type' => $rule['type'],
                     'name' => $rule['name'],
@@ -301,6 +302,7 @@ abstract class SpiderXAbstract
             $urlList = [$urlList];
         }
         array_walk($urlList, function ($url) use ($rule, $data) {
+            $url = htmlspecialchars_decode($url);
             $this->addUrl([
             'url' => $url,
             'type' => $rule['type'],
