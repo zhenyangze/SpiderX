@@ -202,10 +202,12 @@ abstract class SpiderXAbstract
         }
         if ($pageInfo['type'] == 'list' && !empty($data)) {
             foreach ($data as $itemList) {
-                foreach ($itemList as $index => $value) {
+                foreach ((array)$itemList as $index => $value) {
                     $sliceData = [];
                     foreach (array_keys($data) as $newKey) {
-                        $sliceData[$newKey] = $data[$newKey][$index];
+                        if (isset($data[$newKey][$index])) {
+                            $sliceData[$newKey] = $data[$newKey][$index];
+                        }
                     }
                     $this->fetchSimpleLinks($pageInfo, $html, $sliceData);
                 }

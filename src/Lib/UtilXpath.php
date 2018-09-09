@@ -212,7 +212,7 @@ class UtilXpath
 
     public function arrToOne($multi) {
         $arr = [];
-        foreach ($multi as $val) {
+        foreach ((array)$multi as $val) {
             if(is_array($val) ) {
                 $arr = array_merge($arr, $this->arrToOne($val));
             } else {
