@@ -167,6 +167,20 @@ $spider->addUrl([
 
 ```
 
+### 快速导出列表数据和表格数据
+```php
+    $dataList = (new \SpiderX\Lib\UtilXpath)->setAttr(['title'])->setHtml($html)->setRange('//table[@id="YKTabCon2_10"]')->getResult();
+    foreach($dataList as $data) {
+        array_walk($data, function (&$item) {
+            $item = str_ireplace(',', '，', $item);
+            $item = trim($item);
+        });
+        file_put_contents('data.csv', implode(',', $data) . "\n", FILE_APPEND | LOCK_EX);
+    }
+```
+
+
+
 ## 执行效果
 ```shell
 Usage:
