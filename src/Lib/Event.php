@@ -10,10 +10,27 @@
  */
 namespace SpiderX\Lib;
 
+/**
+ *
+ */
 class Event
 {
+    /**
+     * array
+     *
+     * @return
+     */
     protected static $listens = array();
 
+    /**
+     * listen
+     *
+     * @param $event
+     * @param $callback
+     * @param $once
+     *
+     * @return
+     */
     public static function listen($event, $callback, $once = false)
     {
         if (!is_callable($callback)) {
@@ -23,11 +40,27 @@ class Event
         return true;
     }
 
+    /**
+     * one
+     *
+     * @param $event
+     * @param $callback
+     *
+     * @return
+     */
     public static function one($event, $callback)
     {
         return self::listen($event, $callback, true);
     }
 
+    /**
+     * remove
+     *
+     * @param $event
+     * @param $index
+     *
+     * @return
+     */
     public static function remove($event, $index = null)
     {
         if (is_null($index)) {
@@ -37,6 +70,11 @@ class Event
         }
     }
 
+    /**
+     * trigger
+     *
+     * @return
+     */
     public static function trigger()
     {
         if (!func_num_args()) {

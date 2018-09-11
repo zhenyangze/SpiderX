@@ -9,12 +9,28 @@
  * @license MIT
  */
 namespace SpiderX\Lib;
+
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\TransferException;
 
-class Url {
+/**
+ * 
+ */
+class Url
+{
+    /**
+     * 
+     */
     public static $instance = [];
-    public static function formatUrl($url) {
+    /**
+     * formatUrl 
+     *
+     * @param $url
+     *
+     * @return 
+     */
+    public static function formatUrl($url)
+    {
         $pageInfo = parse_url($url);
         foreach ($pageInfo as $field => $value) {
             switch ($field) {
@@ -32,6 +48,14 @@ class Url {
         return implode('', $pageInfo);
     }
 
+    /**
+     * rel2abs 
+     *
+     * @param $rel
+     * @param $base
+     *
+     * @return 
+     */
     public static function rel2abs($rel, $base)
     {
         if (empty($rel)) {
@@ -61,13 +85,29 @@ class Url {
         return $scheme.'://'.$abs;
     }
 
-    public static function getLinks($html) {
+    /**
+     * getLinks 
+     *
+     * @param $html
+     *
+     * @return 
+     */
+    public static function getLinks($html)
+    {
         preg_match_all('/href=([\'"]?)([^\s><\'"]*)\1/is', $html, $match);
         $links = isset($match['2']) ? $match[2] : [];
         return $links;
     }
 
-    public static function getHtml($pageInfo = '') {
+    /**
+     * getHtml 
+     *
+     * @param $pageInfo
+     *
+     * @return 
+     */
+    public static function getHtml($pageInfo = '')
+    {
         if (empty($pageInfo['url'])) {
             return '';
         }
@@ -85,25 +125,25 @@ class Url {
         $sendData = [];
         if ($method == 'POST') {
             $query = isset($pageInfo['query']) ? $pageInfo['query'] : '';
-            if(is_array($query)) {
+            if (is_array($query)) {
                 $sendData['form_params'] = $query;
-            } else {
-                $sendData['body'] = $query;
-            }
-        }
+    } else {
+        $sendData['body'] = $query;
+    }
+}
 
-        if (isset($pageInfo['extra'])) {
-            $sendData = array_merge($sendData, $pageInfo['extra']);
-        }
+if (isset($pageInfo['extra'])) {
+    $sendData = array_merge($sendData, $pageInfo['extra']);
+}
 
-        $html = '';
-        try {
-            $response = self::$instance['client']->request($method, $pageInfo['url'], $sendData);
-            $html = $response->getBody();
-            $html = @mb_convert_encoding((string)$html, 'UTF-8', 'UTF-8,GBK,GB2312,BIG5,LATIN1');
-            $statusCode = $response->getStatusCode();
-            if (!in_array($statusCode, [200])) {
-                Log::debug('http error:' . $statusCode, $pageInfo);
+$html = '';
+try {
+    $response = self::$instance['client']->request($method, $pageInfo['url'], $sendData);
+    $html = $response->getBody();
+    $html = @mb_convert_encoding((string)$html, 'UTF-8', 'UTF-8,GBK,GB2312,BIG5,LATIN1');
+    $statusCode = $response->getStatusCode();
+    if (!in_array($statusCode, [200])) {
+        Log::debug('http error:' . $statusCode, $pageInfo);
             }
         } catch (TransferException $e) {
             $html = '';

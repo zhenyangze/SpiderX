@@ -10,8 +10,18 @@
  */
 namespace SpiderX\Lib;
 
+/**
+ *
+ */
 class Queue
 {
+    /**
+     * __construct
+     *
+     * @param $config
+     *
+     * @return
+     */
     public function __construct($config = [])
     {
         $this->key = 'SpiderX:Queue:' . $config['key'];
@@ -19,26 +29,54 @@ class Queue
         $this->redis->connect($config['host'], $config['port']);
     }
 
-    public function getKey() {
+    /**
+     * getKey
+     *
+     * @return
+     */
+    public function getKey()
+    {
         return $this->key;
     }
 
+    /**
+     * delete
+     *
+     * @return
+     */
     public function delete()
     {
         $this->redis->delete($this->key);
     }
 
+    /**
+     * length
+     *
+     * @return
+     */
     public function length()
     {
         return $this->redis->llen($this->key);
     }
 
+    /**
+     * push
+     *
+     * @param $data
+     *
+     * @return
+     */
     public function push($data)
     {
         $data = serialize($data);
         return $this->redis->lpush($this->key, $data);
     }
 
+    /**
+     * pop
+     *
+     * @return
+     */
     public function pop()
     {
         $data = $this->redis->rpop($this->key);

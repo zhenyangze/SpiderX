@@ -10,8 +10,21 @@
  */
 namespace SpiderX\Lib;
 
+/**
+ *
+ */
 class Util
 {
+    /**
+     * substrByPreg
+     *
+     * @param $start
+     * @param $end
+     * @param $str
+     * @param $isLimit
+     *
+     * @return
+     */
     public static function substrByPreg($start, $end, $str, $isLimit = false)
     {
         $resultList = [];
@@ -33,6 +46,16 @@ class Util
         return $isLimit ? '' : $resultList;
     }
 
+    /**
+     * subStrByStr
+     *
+     * @param $start
+     * @param $end
+     * @param $str
+     * @param $isLimit
+     *
+     * @return
+     */
     public static function subStrByStr($start, $end, $str, $isLimit = false)
     {
         $resultList = [];
@@ -53,7 +76,58 @@ class Util
         }
         return $isLimit ? '' : $resultList;
     }
+    /**
+     * subStrByMask
+     * 
+     * Util::subStrByMask('123abc123', '123(*)123') = abc
+     * Util::subStrByMask('123abcdef', '(*)abc', true) = 123abc
+     * @param $html
+     * @param $pattern
+     * @param $returnfull
+     *
+     * @return
+     */
+    public static function subStrByMask($html, $pattern, $returnfull = false)
+    {
+        $part = explode('(*)', $pattern);
+        if (count($part) == 1) {
+            return '';
+        } else {
+            if ($part[0] && $part[1]) {
+                $res = self::subStrByStr($part[0], $part[1], $html, true);
+                if ($res) {
+                    return $returnfull ? $part[0] . $res . $part[1] : $res;
+                }
+            } else {
+                //pattern=xxx(*)
+                if ($part[0]) {
+                    if (strpos($html, $part[0]) !== false) {
+                        $html = explode($part[0], $html);
+                        if ($html[1]) {
+                            return $returnfull ? $part[0] . $html[1] : $html[1];
+                        }
+                    }
+                } elseif ($part[1]) {
+                    //pattern=(*)xxx
+                    if (strpos($html, $part[1]) !== false) {
+                        $html = explode($part[1], $html);
+                        if ($html[0]) {
+                            return $returnfull ? $html[0] . $part[1] : $html[0];
+                        }
+                    }
+                }
+            }
+            return '';
+        }
+    }
 
+    /**
+     * tableToArray
+     *
+     * @param $html
+     *
+     * @return
+     */
     public static function tableToArray($html)
     {
         preg_match("/<table[^>]*>(.+)<\/table>/is", $html, $match);
@@ -86,7 +160,7 @@ class Util
                 unset($t);
             }
         }
-      //  除去html标记
+        //  除去html标记
         for ($i = 0; $i < count($trArr); $i++) {
             //填充
             for ($j=0; $j< count($trArr[$i]); $j++) {
@@ -113,20 +187,37 @@ class Util
     }
 
     // 获得当前使用内存
+    /**
+     * memoryGetUsage
+     *
+     * @return
+     */
     public static function memoryGetUsage()
     {
         $memory = memory_get_usage();
         return self::formatBytes($memory);
     }
-    
+
     // 获得最高使用内存
+    /**
+     * memoryGetPeakUsage
+     *
+     * @return
+     */
     public static function memoryGetPeakUsage()
     {
         $memory = memory_get_peak_usage();
         return self::formatBytes($memory);
     }
-    
+
     // 转换大小单位
+    /**
+     * formatBytes
+     *
+     * @param $size
+     *
+     * @return
+     */
     public static function formatBytes($size)
     {
         $unit = array('b', 'kb', 'mb', 'gb', 'tb', 'pb');
@@ -177,7 +268,7 @@ class Util
         if (!is_dir($path)) {
             return @chmod($path, $filemode);
         }
-        
+
         $dh = opendir($path);
         while (($file = readdir($dh)) !== false) {
             if ($file != '.' && $file != '..') {
@@ -191,15 +282,22 @@ class Util
                 }
             }
         }
-        
+
         closedir($dh);
-        
+
         if (@chmod($path, $filemode)) {
             return true;
         } else {
             return false;
         }
     }
+    /**
+     * time2second
+     *
+     * @param $time
+     *
+     * @return
+     */
     public static function time2second($time)
     {
         if (is_numeric($time)) {
@@ -229,6 +327,14 @@ class Util
             return false;
         }
     }
+    /**
+     * getPercent
+     *
+     * @param $num1
+     * @param $num2
+     *
+     * @return
+     */
     public static function getPercent($num1, $num2)
     {
         if ($num2 <= 0) {
@@ -237,13 +343,18 @@ class Util
 
         return round(($num1/$num2) * 100, 2);
     }
+    /**
+     * daemonize
+     *
+     * @return
+     */
     public static function daemonize()
     {
         $pid = pcntl_fork();
         if ($pid == -1) {
             die("fork(1) failed!\n");
         } elseif ($pid > 0) {
-        //让由用户启动的进程退出
+            //让由用户启动的进程退出
             exit(0);
         }
 
@@ -254,7 +365,7 @@ class Util
         if ($pid == -1) {
             die("fork(2) failed!\n");
         } elseif ($pid > 0) {
-        //父进程退出, 剩下子进程成为最终的独立进程
+            //父进程退出, 剩下子进程成为最终的独立进程
             exit(0);
         }
     }

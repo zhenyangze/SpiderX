@@ -10,8 +10,18 @@
  */
 namespace SpiderX\Lib;
 
+/**
+ * 
+ */
 class Table
 {
+    /**
+     * __construct 
+     *
+     * @param $config
+     *
+     * @return 
+     */
     public function __construct($config = [])
     {
         $this->hashKey = 'SpiderX:Table:Hash:' . $config['key'];
@@ -20,14 +30,29 @@ class Table
         $this->redis->connect($config['host'], $config['port']);
     }
 
+    /**
+     * getHashKey 
+     *
+     * @return 
+     */
     public function getHashKey() {
         return $this->hashKey;
     }
 
+    /**
+     * getSetKey 
+     *
+     * @return 
+     */
     public function getSetKey () {
         return $this->setKey;
     }
 
+    /**
+     * delete 
+     *
+     * @return 
+     */
     public function delete()
     {
         $this->redis->delete($this->setKey);
@@ -36,11 +61,24 @@ class Table
         $this->redis->delete($keys);
     }
 
+    /**
+     * length 
+     *
+     * @return 
+     */
     public function length()
     {
         return $this->redis->ssize($this->setKey);
     }
 
+    /**
+     * set 
+     *
+     * @param $key
+     * @param $value
+     *
+     * @return 
+     */
     public function set($key, $value)
     {
         $hashKey = $this->hashKey . $key;
@@ -48,6 +86,13 @@ class Table
         $this->redis->set($hashKey, serialize($value), 3600 * 24 * 7);
     }
 
+    /**
+     * get 
+     *
+     * @param $key
+     *
+     * @return 
+     */
     public function get($key)
     {
         $hashKey = $this->hashKey . $key;
@@ -58,10 +103,17 @@ class Table
         return;
     }
 
+    /**
+     * remove 
+     *
+     * @param $key
+     *
+     * @return 
+     */
     public function remove($key)
     {
         $hashKey = $this->hashKey . $key;
         $this->redis->delete($hashKey);
         $this->redis->sRemove($hashKey);
     }
-}
+    }

@@ -10,8 +10,18 @@
  */
 namespace SpiderX\Lib;
 
+/**
+ * 
+ */
 class Unique
 {
+    /**
+     * __construct 
+     *
+     * @param $config
+     *
+     * @return 
+     */
     public function __construct($config = [])
     {
         $this->key = 'SpiderX:Unique' . $config['key'];
@@ -19,25 +29,54 @@ class Unique
         $this->redis->connect($config['host'], $config['port']);
     }
 
+    /**
+     * getKey 
+     *
+     * @return 
+     */
     public function getKey() {
         return $this->key;
     }
 
+    /**
+     * delete 
+     *
+     * @return 
+     */
     public function delete()
     {
         $this->redis->delete($this->key);
     }
 
+    /**
+     * length 
+     *
+     * @return 
+     */
     public function length()
     {
         return $this->redis->ssize($this->key);
     }
 
+    /**
+     * add 
+     *
+     * @param $value
+     *
+     * @return 
+     */
     public function add($value)
     {
         return $this->redis->sadd($this->key, $value);
     }
 
+    /**
+     * remove 
+     *
+     * @param $key
+     *
+     * @return 
+     */
     public function remove($key) {
         return $this->redis->sRem($this->key, $key);
     }
