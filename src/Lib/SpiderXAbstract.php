@@ -233,12 +233,45 @@ abstract class SpiderXAbstract
             if (empty($rule['url'])) {
                 continue;
             }
-            if (strpos($rule['url'], '#') === 0 || strpos($rule['url'], '/') === 0) {
+            if (is_callable($rule['rule'])) {
+               $this->fetchClourseLink($rule, $pageInfo, $html, $data);
+            } elseif (strpos($rule['url'], '#') === 0 || strpos($rule['url'], '/') === 0) {
                 $this->fetchRegularLink($rule, $pageInfo, $html, $data);
             } else {
                 $this->fetchUrlLink($rule, $pageInfo, $html, $data);
             }
         }
+    }
+
+    /**
+     * fetchClourseLink 
+     *
+     * @param $rule
+     * @param $pageInfo
+     * @param $html
+     * @param $data
+     *
+     * @return 
+     */
+    protected function fetchClourseLink($rule, $pageInfo, $html, $data = [])
+    {
+        $urlList = call_user_func_array($rule['url'], [
+            $pageInfo,
+            $html,
+            $data
+        ]);
+        $self = $this;
+        array_walk((array)$urlList, function ($url) use ($rule, $pageInfo, $data, $self) {
+            $url = Url::rel2abs($url, $pageInfo['url']);
+            $url = htmlspecialchars_decode($url);
+            $self->addUrl([
+                'url' => $url,
+                'type' => $rule['type'],
+                'name' => $rule['name'],
+                'context' => $data,
+            ]);
+        });
+
     }
 
     /**
@@ -303,13 +336,15 @@ abstract class SpiderXAbstract
         if (!is_array($urlList)) {
             $urlList = [$urlList];
         }
-        array_walk($urlList, function ($url) use ($rule, $data) {
+        $this->addUrlList($urlList, $rule, $html, $data);
+        array_walk($urlList, function ($url) use ($rule, $pageInfo, $data, $self) {
+            $url = Url::rel2abs($url, $pageInfo['url']);
             $url = htmlspecialchars_decode($url);
-            $this->addUrl([
-            'url' => $url,
-            'type' => $rule['type'],
-            'name' => $rule['name'],
-            'context' => $data,
+            $self->addUrl([
+                'url' => $url,
+                'type' => $rule['type'],
+                'name' => $rule['name'],
+                'context' => $data,
             ]);
         });
     }
