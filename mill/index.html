@@ -58,7 +58,25 @@
         </fieldset>
         <div id="add-unit-template">
             <div class="layui-container">
-                <form class="layui-form" onsubmit="return false;">
+                <table class="layui-table">
+                    <colgroup>
+                        <col width="150">
+                        <col width="200">
+                        <col>
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>单元名称</th>
+                            <th>单元类型</th>
+                            <th>入口URL</th>
+                            <th>采集字段</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ruleList">
+                    </tbody>
+                </table>
+                <form class="layui-form" onsubmit="return false;" id="unit-form">
                     <div class="layui-form-item">
                         <div class="layui-inline">
                             <label class="layui-form-label">单元名称</label>
@@ -72,7 +90,7 @@
                             <label class="layui-form-label">单元类型</label>
                             <div class="layui-input-inline">
                                 <div class="layui-input-inline">
-                                    <input type="radio" name="type" value="list" title="列表" checked="">
+                                    <input type="radio" name="type" value="list" title="列表" checked>
                                     <input type="radio" name="type" value="detail" title="内容">
                                 </div>
                             </div>
@@ -98,7 +116,7 @@
                         <div class="layui-form-item layui-form-text">
                             <label class="layui-form-label">&nbsp;&nbsp;</label>
                             <div class="layui-input-block">
-                                <button class="layui-btn" >保存</button>
+                                <button class="layui-btn" data-method="addRule">保存</button>
                                 <button class="layui-btn layui-btn-normal" type="reset">重置</button>
                             </div>
                         </div> 
@@ -255,10 +273,35 @@ $spider->start();
                             layer.style(index, {
                                 width: '800px',
                             });*/
+                    },
+                    addRule: function (othis) {
+                        var name = $('[name=unit-name]').val();
+                        if (name.length == 0) {
+                            alert('单元名称不能为空');
+                            return false;
+                        }
+                        var isRepeat = false;
+                        layui.each($('[data-name]'), function(index, item) {
+                            if ($(item).attr('data-name') == name) {
+                                alert('单元名称重复');
+                                isRepeat = true
+                                return false;
+                            }
+                        });
+                        if (isRepeat) {
+                            return false;
+                        }
+                        var type = $("input[name='type']:checked").val();
+                        var url = $('[name=url]').val();
+                        var dataField  =$('[name=dataField]').val().split("\n").filter(d=>d).join(',');
+
+                        $('#ruleList').append('<tr><td data-name="'+name+'">' + name +'</td><td>'+type+'</td><td>'+url+'</td><td>'+dataField+'</td><td><a href="javascript:;" onclick="this.parentNode.parentNode.parentNode.removeChild(this.parentNode.parentNode)">删除</a></td></tr>');
+                        $('form#unit-form')[0].reset();
+
                     }
                 };
 
-                $('.layui-nav a').on('click', function(){
+                $('[data-method]').on('click', function(){
                     var othis = $(this), method = othis.data('method');
                     active[method] ? active[method].call(this, othis) : '';
                 });
