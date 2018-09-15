@@ -22,7 +22,7 @@
             <li class="layui-nav-item layui-this"><a href="javascript:;">SpiderX生成器</a></li>
             <li class="layui-nav-item"><a href="javascript:;">1、基本配置</a></li>
             <li class="layui-nav-item"><a href="javascript:;">2、添加采集单元</a></li>
-            <li class="layui-nav-item"><a href="javascript:;" data-method="viewCode" data-type="auto">3、查看代码</a></li>
+            <li class="layui-nav-item"><a href="javascript:;" data-method="viewCode" data-type="auto"><i class="layui-icon layui-icon-release"></i>   3、点击查看代码</a></li>
         </ul>
 
         <fieldset class="layui-elem-field layui-field-title" style="margin-top: 30px;">
@@ -136,31 +136,29 @@ include_once __DIR__ . "/vendor/autoload.php";
 $config = [
     "name" => "<%=name%>",
     "tasknum" => <%=tasknum%>,
-    "start" => [
-        "<%=startUrl%>"
+    "start" => [<% layui.each(startUrl, function(index, item){ %>
+        "<%=item%>",<% }); %>
     ],
-    "rule" => [
-        <% layui.each(ruleList, function(index, item){ %>[
+    "rule" => [<% layui.each(ruleList, function(index, item){ %>
+        [
             "name" => "<%=item.name%>",
-            "type" => "<%=item.type%>",
-            <%  if(item.type == "clourse"){ %>
+            "type" => "<%=item.type%>",<%  if(item.url == "clourse"){ %>
             "url" => function ($pageInfo, $html, $data) {
                 return [];
             },<%  } else { %>
             "url" => "#regx#",<%  } %>
-            "data" => [
-                <%  layui.each(item.dataField, function(fieldIndex, field){ %>"<%=field%>" => function($pageInfo, $html, $data) {
+            "data" => [<%  layui.each(item.dataField, function(fieldIndex, field){ %>
+                "<%=field%>" => function($pageInfo, $html, $data) {
                     return null;
-                },
-                <%  }); %>
+                },<%  }); %>
             ],
-        ],
-        <%  }); %>
+        ],<%  }); %>
     ],
 ];
 
 $spider = new \SpiderX\SpiderX($config);
 $spider->on_start = function () {
+    // 模拟登录
     return true;
 };
 $spider->on_add_url = function ($pageInfo) {
@@ -168,9 +166,9 @@ $spider->on_add_url = function ($pageInfo) {
 };
 $spider->on_add_url_fail = function ($pageInfo) {
     return true;
-};
+};<%  layui.each(ruleList, function(index, item){ %>
 
-<%  layui.each(ruleList, function(index, item){ %>// ------ <%=item.name%> start ------
+// ------ <%=item.name%> start ------
 $spider->on_loadding_<%=item.name%> = function ($pageInfo) {
     return true;
 };
@@ -178,12 +176,12 @@ $spider->on_loaded_<%=item.name%> = function ($pageInfo, $html) {
     return true;
 };
 $spider->on_fetch_<%=item.name%> = function ($pageInfo, $html, $data) {
+    // 获取数据，可执行保存逻辑
     <%  if(item.type == "list"){ %>//$data = (new \SpiderX\Lib\UtilXpath)->setAttr(["title"])->setHtml($html)->setRange("//table[@id="YKTabCon2_10"]")->getResult();
     <%  } else { %>//$data["title"] = SpiderX\Lib\Util::subStrByStr("<title>", "</title>", $html, true);<%  } %>
     return $data;
 };
-// ------ <%=item.name%> end ------
-<%  }); %>
+// ------ <%=item.name%> end ------<%  }); %>
 
 $spider->on_finish = function () {
     return true;
@@ -235,22 +233,29 @@ $spider->start();
                 //触发事件
                 var active = {
                     viewCode: function(othis){
+                    if ($('#task_name').val().length == 0) {
+                        alert('任务名称不能为空');
+                        return false;
+                    }
                         var templateData = {
-                            name: '测试',
-                            tasknum: 3,
-                            startUrl: 'http://www.baidu.com',
-                            ruleList: [
-                                {
-                                    name: 'list',
-                                    type: 'list',
-                                    dataField: [
-                                        'title',
-                                        'body',
-                                        'author',
-                                    ],
-                                }
-                            ]
+                            name: $('#task_name').val(),
+                            tasknum: $('#tasknumber').val() > 0 ? $('#tasknumber').val() : 3,
+                            startUrl: $('#starturl').val().split("\n").filter(d=>d),
+                            ruleList: []
                         }
+                        layui.each($('#ruleList tr'), function(index, item) {
+                            var unitList = $(item).find('td');
+                            var unitName = $(unitList[0]).text();
+                            var unitType = $(unitList[1]).text();
+                            var unitUrl = $(unitList[2]).text();
+                            var unitField = $(unitList[3]).text().split(',').filter(d=>d);
+                            templateData.ruleList.push({
+                                name: unitName,
+                                type: unitType,
+                                url: unitUrl,
+                                dataField: unitField
+                            });
+                        });
                         var html = tmpl('template', templateData);
                             var type = othis.data('type')
                                 ,text = othis.text();
