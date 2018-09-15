@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>SpiderX生成器</title>
+        <link rel="stylesheet" href="./static/layui/css/layui.css"  media="all">
+        <meta name="renderer" content="webkit">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+        <style type="text/css" media="screen">
+.layui-layer-page{
+    min-width:800px !important;
+        min-height: 450px;
+}
+            #layerDemoauto {
+                padding: 5px;
+            }
+        </style>
+    </head>
+    <body>
+        <ul class="layui-nav">
+            <li class="layui-nav-item layui-this"><a href="javascript:;">SpiderX生成器</a></li>
+            <li class="layui-nav-item"><a href="javascript:;">1、基本配置</a></li>
+            <li class="layui-nav-item"><a href="javascript:;">2、添加采集单元</a></li>
+            <li class="layui-nav-item"><a href="javascript:;" data-method="viewCode" data-type="auto">3、查看代码</a></li>
+        </ul>
+
+        <fieldset class="layui-elem-field layui-field-title" style="margin-top: 30px;">
+            <legend>基本配置</legend>
+        </fieldset>
+        <div class="layui-container">
+            <form class="layui-form" action="">
+                <div class="layui-form-item">
+                    <div class="layui-inline">
+                        <label class="layui-form-label">任务名称</label>
+                        <div class="layui-input-inline">
+                            <input type="tel" name="task_name" lay-verify="required" autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <label class="layui-form-label">任务数量</label>
+                        <div class="layui-input-inline">
+                            <input type="number" name="nuber" lay-verify="number" value="3" autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">入口Url</label>
+                    <div class="layui-input-block">
+                        <textarea placeholder="请输入内容, 一行一个" class="layui-textarea"></textarea>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <fieldset class="layui-elem-field layui-field-title" style="margin-top: 30px;">
+            <legend>采集单元</legend>
+        </fieldset>
+        <div id="add-unit-template">
+            <div class="layui-container">
+                <form class="layui-form" action="">
+                    <div class="layui-form-item">
+                        <div class="layui-inline">
+                            <label class="layui-form-label">单元名称</label>
+                            <div class="layui-input-inline">
+                                <input type="text" name="unit-name" lay-verify="required" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <div class="layui-inline">
+                            <label class="layui-form-label">单元类型</label>
+                            <div class="layui-input-inline">
+                                <div class="layui-input-inline">
+                                    <input type="radio" name="sex" value="list" title="列表" checked="">
+                                    <input type="radio" name="sex" value="detail" title="内容">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="layui-inline">
+                            <label class="layui-form-label">入口URL</label>
+                            <div class="layui-input-inline">
+                                <div class="layui-input-inline">
+                                    <select name="url" lay-filter="aihao">
+                                        <option value="clourse">方法</option>
+                                        <option value="regx">正则</option>
+                                        <option value="inline">内联</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="layui-form-item layui-form-text">
+                            <label class="layui-form-label">采集字段</label>
+                            <div class="layui-input-block">
+                                <textarea placeholder="请输入内容，一行一个" class="layui-textarea"></textarea>
+                            </div>
+                        </div> 
+                        <div class="layui-form-item layui-form-text">
+                            <label class="layui-form-label">&nbsp;&nbsp;</label>
+                            <div class="layui-input-block">
+                                <button class="layui-btn">保存</button>
+                                <button class="layui-btn layui-btn-normal">重置</button>
+                            </div>
+                        </div> 
+
+                    </div>
+                </form>
+            </div>
+        </div>
+        <script id="template" type="text/html">
+            <pre class="layui-code">
+if (!is_file("./vendor/autoload.php")) {
+    exec("composer require yangze/spiderx");
+}
+
+include_once __DIR__ . "/vendor/autoload.php";
+
+$config = [
+    "name" => "<%=name%>",
+    "tasknum" => <%=tasknum%>,
+    "start" => [
+        "<%=startUrl%>"
+    ],
+    "rule" => [
+        <% layui.each(ruleList, function(index, item){ %>[
+            "name" => "<%=item.name%>",
+            "type" => "<%=item.type%>",
+            <%  if(item.type == "clourse"){ %>
+            "url" => function ($pageInfo, $html, $data) {
+                return [];
+            },<%  } else { %>
+            "url" => "#regx#",<%  } %>
+            "data" => [
+                <%  layui.each(item.dataField, function(fieldIndex, field){ %>"<%=field%>" => function($pageInfo, $html, $data) {
+                    return null;
+                },
+                <%  }); %>
+            ],
+        ],
+        <%  }); %>
+    ],
+];
+
+$spider = new \SpiderX\SpiderX($config);
+$spider->on_start = function () {
+    return true;
+};
+$spider->on_add_url = function ($pageInfo) {
+    return true;
+};
+$spider->on_add_url_fail = function ($pageInfo) {
+    return true;
+};
+
+<%  layui.each(ruleList, function(index, item){ %>// ------ <%=item.name%> start ------
+$spider->on_loadding_<%=item.name%> = function ($pageInfo) {
+    return true;
+};
+$spider->on_loaded_<%=item.name%> = function ($pageInfo, $html) {
+    return true;
+};
+$spider->on_fetch_<%=item.name%> = function ($pageInfo, $html, $data) {
+    <%  if(item.type == "list"){ %>//$data = (new \SpiderX\Lib\UtilXpath)->setAttr(["title"])->setHtml($html)->setRange("//table[@id="YKTabCon2_10"]")->getResult();
+    <%  } else { %>//$data["title"] = SpiderX\Lib\Util::subStrByStr("<title>", "</title>", $html, true);<%  } %>
+    return $data;
+};
+// ------ <%=item.name%> end ------
+<%  }); %>
+
+$spider->on_finish = function () {
+    return true;
+};
+$spider->start();
+</pre>
+        </script>
+
+        <script src="./static/layui/layui.all.js" charset="utf-8"></script>
+        <script charset="utf-8">
+            (function(){
+  var cache = {};
+
+  this.tmpl = function tmpl(str, data){
+    // Figure out if we're getting a template, or if we need to
+    // load the template - and be sure to cache the result.
+    var fn = !/\W/.test(str) ?
+      cache[str] = cache[str] ||
+        tmpl(document.getElementById(str).innerHTML) :
+
+      // Generate a reusable function that will serve as a template
+      // generator (and which will be cached).
+    new Function("obj",
+        "var p=[],print=function(){p.push.apply(p,arguments);};" +
+
+        // Introduce the data as local variables using with(){}
+        "with(obj){p.push('" +
+
+        // Convert the template into pure JavaScript
+        str
+          .replace(/[\r\t\n]/g, " <br> ")
+          .split("<%").join("\t")
+          .replace(/((^|%>)[^\t]*)'/g, "$1\r")
+          .replace(/\t=(.*?)%>/g, "',$1,'")
+          .split("\t").join("');")
+          .split("%>").join("p.push('")
+          .split("\r").join("\\'")
+      + "');}return p.join('');");
+
+    // Provide some basic currying to the user
+    return data ? fn( data ) : fn;
+  };
+})();
+        </script>
+        <script>
+            layui.use(['layer', 'laytpl'], function(){ //独立版的layer无需执行这一句
+                var $ = layui.jquery, layer = layui.layer; //独立版的layer无需执行这一句
+                var laytpl = layui.laytpl;
+                //触发事件
+                var active = {
+                    viewCode: function(othis){
+                        var data = { //数据
+                            "title":"Layui常用模块"
+                            ,"list":[{"modname":"弹层","alias":"layer","site":"layer.layui.com"},{"modname":"表单","alias":"form"}]
+                        }
+                        var templateData = {
+                            name: '测试',
+                            tasknum: 3,
+                            startUrl: 'http://www.baidu.com',
+                            ruleList: [
+                                {
+                                    name: 'list',
+                                    type: 'list',
+                                    dataField: [
+                                        'title',
+                                        'body',
+                                        'author',
+                                    ],
+                                },
+                                {
+                                    name: 'detail',
+                                    type: 'detail',
+                                    dataField: [
+                                        'title',
+                                        'body',
+                                        'author',
+                                    ],
+                                }
+                            ]
+                        }
+                        var html = tmpl('template', templateData);
+                            var type = othis.data('type')
+                                ,text = othis.text();
+
+                            var index = layer.open({
+                                type: 1
+                                ,maxmin: true
+                                ,offset: type //具体配置参考：http://www.layui.com/doc/modules/layer.html#offset
+                                ,id: 'layerDemo'+type //防止重复弹出
+                                //,content: '<textarea style="width:99%;height:100%;min-height:400px;">' + getTpl + '</textarea>'
+                                ,content: html
+                                ,btn: '关闭'
+                                ,btnAlign: 'c' //按钮居中
+                                ,shade: 0 //不显示遮罩
+                                ,yes: function(){
+                                    layer.closeAll();
+                                }
+                            });
+                            /**
+                            layer.style(index, {
+                                width: '800px',
+                            });*/
+                    }
+                };
+
+                $('.layui-nav a').on('click', function(){
+                    var othis = $(this), method = othis.data('method');
+                    active[method] ? active[method].call(this, othis) : '';
+                });
+
+            });
+        </script>
+    </body>
+</html>
