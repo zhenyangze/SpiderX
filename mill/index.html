@@ -29,25 +29,25 @@
             <legend>基本配置</legend>
         </fieldset>
         <div class="layui-container">
-            <form class="layui-form" action="">
+            <form class="layui-form" onsubmit="return false;">
                 <div class="layui-form-item">
                     <div class="layui-inline">
                         <label class="layui-form-label">任务名称</label>
                         <div class="layui-input-inline">
-                            <input type="tel" name="task_name" lay-verify="required" autocomplete="off" class="layui-input">
+                            <input type="tel" id="task_name" lay-verify="required" autocomplete="off" class="layui-input">
                         </div>
                     </div>
                     <div class="layui-inline">
                         <label class="layui-form-label">任务数量</label>
                         <div class="layui-input-inline">
-                            <input type="number" name="nuber" lay-verify="number" value="3" autocomplete="off" class="layui-input">
+                            <input type="number" id="tasknumber" lay-verify="number" value="3" autocomplete="off" class="layui-input">
                         </div>
                     </div>
                 </div>
                 <div class="layui-form-item layui-form-text">
                     <label class="layui-form-label">入口Url</label>
                     <div class="layui-input-block">
-                        <textarea placeholder="请输入内容, 一行一个" class="layui-textarea"></textarea>
+                        <textarea placeholder="请输入内容, 一行一个" id="starturl" class="layui-textarea"></textarea>
                     </div>
                 </div>
             </form>
@@ -58,7 +58,7 @@
         </fieldset>
         <div id="add-unit-template">
             <div class="layui-container">
-                <form class="layui-form" action="">
+                <form class="layui-form" onsubmit="return false;">
                     <div class="layui-form-item">
                         <div class="layui-inline">
                             <label class="layui-form-label">单元名称</label>
@@ -72,8 +72,8 @@
                             <label class="layui-form-label">单元类型</label>
                             <div class="layui-input-inline">
                                 <div class="layui-input-inline">
-                                    <input type="radio" name="sex" value="list" title="列表" checked="">
-                                    <input type="radio" name="sex" value="detail" title="内容">
+                                    <input type="radio" name="type" value="list" title="列表" checked="">
+                                    <input type="radio" name="type" value="detail" title="内容">
                                 </div>
                             </div>
                         </div>
@@ -92,14 +92,14 @@
                         <div class="layui-form-item layui-form-text">
                             <label class="layui-form-label">采集字段</label>
                             <div class="layui-input-block">
-                                <textarea placeholder="请输入内容，一行一个" class="layui-textarea"></textarea>
+                                <textarea placeholder="请输入内容，一行一个" name="dataField" class="layui-textarea"></textarea>
                             </div>
                         </div> 
                         <div class="layui-form-item layui-form-text">
                             <label class="layui-form-label">&nbsp;&nbsp;</label>
                             <div class="layui-input-block">
-                                <button class="layui-btn">保存</button>
-                                <button class="layui-btn layui-btn-normal">重置</button>
+                                <button class="layui-btn" >保存</button>
+                                <button class="layui-btn layui-btn-normal" type="reset">重置</button>
                             </div>
                         </div> 
 
@@ -217,10 +217,6 @@ $spider->start();
                 //触发事件
                 var active = {
                     viewCode: function(othis){
-                        var data = { //数据
-                            "title":"Layui常用模块"
-                            ,"list":[{"modname":"弹层","alias":"layer","site":"layer.layui.com"},{"modname":"表单","alias":"form"}]
-                        }
                         var templateData = {
                             name: '测试',
                             tasknum: 3,
@@ -229,15 +225,6 @@ $spider->start();
                                 {
                                     name: 'list',
                                     type: 'list',
-                                    dataField: [
-                                        'title',
-                                        'body',
-                                        'author',
-                                    ],
-                                },
-                                {
-                                    name: 'detail',
-                                    type: 'detail',
                                     dataField: [
                                         'title',
                                         'body',
