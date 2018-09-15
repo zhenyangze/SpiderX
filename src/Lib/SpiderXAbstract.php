@@ -233,7 +233,7 @@ abstract class SpiderXAbstract
             if (empty($rule['url'])) {
                 continue;
             }
-            if (is_callable($rule['rule'])) {
+            if (is_callable($rule['url'])) {
                $this->fetchClourseLink($rule, $pageInfo, $html, $data);
             } elseif (strpos($rule['url'], '#') === 0 || strpos($rule['url'], '/') === 0) {
                 $this->fetchRegularLink($rule, $pageInfo, $html, $data);
@@ -255,13 +255,13 @@ abstract class SpiderXAbstract
      */
     protected function fetchClourseLink($rule, $pageInfo, $html, $data = [])
     {
-        $urlList = call_user_func_array($rule['url'], [
+        $urlList = (array)call_user_func_array($rule['url'], [
             $pageInfo,
             $html,
             $data
         ]);
         $self = $this;
-        array_walk((array)$urlList, function ($url) use ($rule, $pageInfo, $data, $self) {
+        array_walk($urlList, function ($url) use ($rule, $pageInfo, $data, $self) {
             $url = Url::rel2abs($url, $pageInfo['url']);
             $url = htmlspecialchars_decode($url);
             $self->addUrl([
@@ -337,6 +337,7 @@ abstract class SpiderXAbstract
             $urlList = [$urlList];
         }
         $this->addUrlList($urlList, $rule, $html, $data);
+        $self = $this;
         array_walk($urlList, function ($url) use ($rule, $pageInfo, $data, $self) {
             $url = Url::rel2abs($url, $pageInfo['url']);
             $url = htmlspecialchars_decode($url);

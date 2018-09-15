@@ -19,6 +19,9 @@ $html = mb_convert_encoding($html, 'UTF-8', 'UTF-8,GBK,GB2312,BIG5');
 
 $data = (new UtilXpath)->setHtml($html)->setRange('//ul[@class="list_009"]')->getResult();
 print_r($data);
+
+$data = (new UtilXpath)->setHtml($html)->setRepeat('//ul[@class="list_009//li"]')->getResult();
+print_r($data);
  */
 class UtilXpath
 {
@@ -38,6 +41,11 @@ class UtilXpath
      * attrList
      */
     protected $attrList = ['href'];
+
+    /**
+     * @var mixed
+     */
+    protected $repeatRule;
     /**
      * __construct
      *
@@ -84,6 +92,12 @@ class UtilXpath
         return $this;
     }
 
+    public function setRepeat($rule = '')
+    {
+        $this->repeatRule = $rule;
+        return $this;
+    }
+
     /**
      * getResult
      *
@@ -95,13 +109,19 @@ class UtilXpath
             return [];
         }
         $this->crawler->addHtmlContent($this->html);
-        $rangeNode = $this->crawler->filterXPath($this->rangeRule);
-        if ($rangeNode->count() == 0) {
-            return [];
+        if (!empty($this->repeatRule)) {
+            $data = $this->crawler->filterXPath($this->repeatRule)->each(function ($node, $i) {
+                return $this->getSubNode($node);
+            });
+        } else {
+            $rangeNode = $this->crawler->filterXPath($this->rangeRule);
+            if ($rangeNode->count() == 0) {
+                return [];
+            }
+            $data = $this->crawler->filterXPath($this->rangeRule)->children()->each(function ($node, $i) {
+                return $this->getSubNode($node);
+            });
         }
-        $data = $this->crawler->filterXPath($this->rangeRule)->children()->each(function ($node, $i) {
-            return $this->getSubNode($node);
-        });
 
         $data = $this->formatData($data);
 
