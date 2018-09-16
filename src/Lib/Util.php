@@ -16,7 +16,7 @@ namespace SpiderX\Lib;
 class Util
 {
     /**
-     * substrByPreg
+     * subStrByPreg
      *
      * @param $start
      * @param $end
@@ -25,7 +25,7 @@ class Util
      *
      * @return
      */
-    public static function substrByPreg($start, $end, $str, $isLimit = false)
+    public static function subStrByPreg($start, $end, $str, $isLimit = false)
     {
         $resultList = [];
         $firstList = preg_split($start, $str);
@@ -119,6 +119,43 @@ class Util
             }
             return '';
         }
+    }
+
+    /**
+     * subStrByXpath 
+     *
+     * @param $html
+     * @param $rule
+     * @param $dataType ['attr', 'text']
+     * @param $key
+     * @param $isLimit
+     *
+     * @return 
+     */
+    public static function subStrByXpath($html, $rule, $dataType, $key = '', $isLimit = false)
+    {
+        if (empty($rule) || empty($html)) {
+            return $isLimit ? '' : [];
+        }
+        if (!isset(self::$crawler)) {
+            self::$crawler = new Symfony\Component\DomCrawler\Crawler();
+        }
+
+        if ($dataType !== 'attr') {
+            $dataType = 'text';
+        }
+        $crawler = clone self::$crawler;
+        $crawler->addHtmlContent($html);
+        $data = $crawler->filterXPath($rule)->each(function ($node, $i) use ($dataType, $key) {
+            if ($dataType == 'attr') {
+                return $node->attr($key);
+            } else {
+                return $node->text();
+            }
+        });
+
+        $crawler->clear();
+        return $isLimit ? array_shift($data) : $data;
     }
 
     /**
