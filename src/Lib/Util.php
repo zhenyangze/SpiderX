@@ -15,6 +15,7 @@ namespace SpiderX\Lib;
  */
 class Util
 {
+    protected static $crawler = null;
     /**
      * subStrByPreg
      *
@@ -138,10 +139,10 @@ class Util
             return $isLimit ? '' : [];
         }
         if (!isset(self::$crawler)) {
-            self::$crawler = new Symfony\Component\DomCrawler\Crawler();
+            self::$crawler = new \Symfony\Component\DomCrawler\Crawler();
         }
 
-        if ($dataType !== 'attr') {
+        if (!in_array($dataType, ['html', 'attr', 'text'])) {
             $dataType = 'text';
         }
         $crawler = clone self::$crawler;
@@ -149,6 +150,8 @@ class Util
         $data = $crawler->filterXPath($rule)->each(function ($node, $i) use ($dataType, $key) {
             if ($dataType == 'attr') {
                 return $node->attr($key);
+            } else if ($dataType == 'html'){
+                return $node->html();
             } else {
                 return $node->text();
             }
