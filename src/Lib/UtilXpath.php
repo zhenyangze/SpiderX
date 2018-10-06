@@ -158,6 +158,7 @@ class UtilXpath
         foreach($data as &$item) {
             $item = $this->arrToOne($item);
         }
+        unset($item);
         foreach ($data as $item) {
             foreach ($item as $key => $value) {
                 if (isset($deleteArr[$key]) && $deleteArr[$key] === false) {
@@ -175,11 +176,13 @@ class UtilXpath
                 array_walk($data, function (&$item) use ($key) {
                     unset($item[$key]);
                 });
+                unset($item);
             }
         }
         foreach ($data as &$item) {
             $item = array_merge($item);
         }
+        unset($item);
 
         return $data;
     }
