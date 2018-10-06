@@ -155,10 +155,9 @@ class UtilXpath
     protected function formatData($data)
     {
         $deleteArr = [];
-        foreach($data as &$item) {
-            $item = $this->arrToOne($item);
+        foreach($data as $key => $item) {
+            $data[$key] = $this->arrToOne($item);
         }
-        unset($item);
         foreach ($data as $item) {
             foreach ($item as $key => $value) {
                 if (isset($deleteArr[$key]) && $deleteArr[$key] === false) {
@@ -173,16 +172,14 @@ class UtilXpath
         }
         foreach ($deleteArr as $key => $isDelete) {
             if ($isDelete) {
-                array_walk($data, function (&$item) use ($key) {
-                    unset($item[$key]);
+                array_walk($data, function (&$subItem) use ($key) {
+                    unset($subItem[$key]);
                 });
-                unset($item);
             }
         }
-        foreach ($data as &$item) {
-            $item = array_merge($item);
+        foreach ($data as $key => $item) {
+            $data[$key] = array_merge($item);
         }
-        unset($item);
 
         return $data;
     }
