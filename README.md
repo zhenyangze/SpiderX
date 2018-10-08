@@ -147,6 +147,7 @@ on_fetch_{news,需要替换不同的name值} = function($pageInfo, $html, $data)
 ## 高级玩法
 ### 模拟登录
 需要要`on_start`回调中添加自动登录逻辑
+> 部分页面可能需要先get方式获取页面中的参数，然后再发起POST请求
 ```php
 $spider->on_start = function () use ($spider) {
     $pageInfo = [
@@ -255,7 +256,7 @@ More command information, please use: demo/sina.php {command} -h
 
 
 ## 后续功能
-- [ ] 脚手架，自动生成代码
+- [x] 脚手架，自动生成代码
 - [ ] 支持深度优先和广度优先
 - [x] 命令行效果
 - [x] 异步多线程
