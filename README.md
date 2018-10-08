@@ -145,6 +145,33 @@ on_fetch_{news,需要替换不同的name值} = function($pageInfo, $html, $data)
 ```
 
 ## 高级玩法
+### 模拟登录
+需要要`on_start`回调中添加自动登录逻辑
+```php
+$spider->on_start = function () use ($spider) {
+    $pageInfo = [
+        'type' => 'index',
+        'name' => 'login',
+        'method' => 'post', // 发送post提交
+        'url' => 'http://127.0.0.1:3200/index.php/action/login?_=b0fd8734e0687a6cfe352e3f0fcbc5f6',
+        'query' => [
+            'name' => 'admin',
+            'password' => 'admin',
+            'referer' => 'http://127.0.0.1:3200/admin/',
+        ], // 请求参数
+        'cookie' => true, // 需要共享cookie
+        'extra' => [
+            'headers' => [
+                'User-Agent' => 'testing/1.0',
+                'Accept'     => 'application/json',
+            ]
+        ]// 添加额外参数，参考
+    ];
+    $spider->addUrl($pageInfo);
+    return true;
+};
+
+```
 ### 无限级数据采集
 实现的方式就是在data的单元中，把url的值设置为上一个单元的`name.DataField`的形式
 > 参考demo目录sina文件。
