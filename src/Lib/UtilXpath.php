@@ -14,14 +14,41 @@ use Symfony\Component\DomCrawler\Crawler;
 
 /**
  * UtilXpath
-$html = file_get_contents('http://roll.news.sina.com.cn/news/gnxw/gdxw1/index.shtml');
+ $html = file_get_contents('http://roll.news.sina.com.cn/news/gnxw/gdxw1/index.shtml');
 $html = mb_convert_encoding($html, 'UTF-8', 'UTF-8,GBK,GB2312,BIG5');
 
-$data = (new UtilXpath)->setHtml($html)->setRange('//ul[@class="list_009"]')->getResult();
+$data = (new UtilXpath)->setHtml($html)->setRange('//ul[@class="list_009"]')->getResult(true);
 print_r($data);
 
-$data = (new UtilXpath)->setHtml($html)->setRepeat('//ul[@class="list_009//li"]')->getResult();
+$data = (new UtilXpath)->setHtml($html)->setRepeat('//ul[@class="list_009//li"]')->getResult(true);
 print_r($data);
+ */
+class UtilCrawler extends Crawler
+{
+    /**
+     * sibling
+     *
+     * @param $node
+     * @param $siblingDir
+     *
+     * @return
+     */
+    protected function sibling($node, $siblingDir = 'nextSibling')
+    {
+        $nodes = array();
+
+        $currentNode = $this->getNode(0);
+        do {
+            if ($node !== $currentNode && (XML_ELEMENT_NODE === $node->nodeType || XML_TEXT_NODE === $node->nodeType )) {
+                $nodes[] = $node;
+            }
+        } while ($node = $node->$siblingDir);
+
+        return $nodes;
+    }
+}
+/**
+ *
  */
 class UtilXpath
 {
@@ -40,7 +67,7 @@ class UtilXpath
     /**
      * attrList
      */
-    protected $attrList = ['href'];
+    protected $attrList = []; // href id title
 
     /**
      * @var mixed
@@ -53,7 +80,7 @@ class UtilXpath
      */
     public function __construct()
     {
-        $this->crawler = new Crawler();
+        $this->crawler = new UtilCrawler();
     }
 
     /**
@@ -92,6 +119,13 @@ class UtilXpath
         return $this;
     }
 
+    /**
+     * setRepeat
+     *
+     * @param $rule
+     *
+     * @return
+     */
     public function setRepeat($rule = '')
     {
         $this->repeatRule = $rule;
@@ -99,11 +133,14 @@ class UtilXpath
     }
 
     /**
-     * getResult
+     * getResult 
      *
-     * @return
+     * @param $isOriginal
+     * @param $reversal
+     *
+     * @return 
      */
-    public function getResult($reversal = false)
+    public function getResult($isOriginal = false, $reversal = false)
     {
         if (empty($this->html)) {
             return [];
@@ -123,7 +160,9 @@ class UtilXpath
             });
         }
 
-        $data = $this->formatData($data);
+        if (!$isOriginal) {
+            $data = $this->formatData($data);
+        }
 
         if ($reversal) {
             $data = $this->reversal($data);
@@ -155,7 +194,7 @@ class UtilXpath
     protected function formatData($data)
     {
         $deleteArr = [];
-        foreach($data as $key => $item) {
+        foreach ($data as $key => $item) {
             $data[$key] = $this->arrToOne($item);
         }
         foreach ($data as $item) {
@@ -194,9 +233,12 @@ class UtilXpath
     public function getSubNode($node)
     {
         $self = $this;
+        if ($node->getNode(0)->nodeType === XML_TEXT_NODE) {
+            return trim($node->text());
+        }
         $subNodeList = $node->children();
         if ($subNodeList->count() == 0) {
-            return $node->text();
+            return $node->html();
         }
 
         $data = $subNodeList->each(function ($subNode, $i) use ($self) {
@@ -218,6 +260,13 @@ class UtilXpath
         return $data;
     }
 
+    /**
+     * reversal
+     *
+     * @param $data
+     *
+     * @return
+     */
     public function reversal($data)
     {
         $newData = [];
@@ -230,10 +279,18 @@ class UtilXpath
         return $newData;
     }
 
-    public function arrToOne($multi) {
+    /**
+     * arrToOne
+     *
+     * @param $multi
+     *
+     * @return
+     */
+    public function arrToOne($multi)
+    {
         $arr = [];
         foreach ((array)$multi as $val) {
-            if(is_array($val) ) {
+            if (is_array($val)) {
                 $arr = array_merge($arr, $this->arrToOne($val));
             } else {
                 $arr[] = $val;
