@@ -248,7 +248,7 @@ class UtilXpath
         $attributeData = [];
         foreach ($this->attrList as $attr) {
             $currentAttributeData = $subNodeList->each(function ($subNode, $i) use ($attr) {
-                if (!is_null($subNode->attr($attr))) {
+                if ($subNode->getNode(0)->nodeType == XML_ELEMENT_NODE && !is_null($subNode->attr($attr))) {
                     return $subNode->attr($attr);
                 }
             });
