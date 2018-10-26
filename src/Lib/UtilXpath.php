@@ -245,8 +245,10 @@ class UtilXpath
             return $self->getSubNode($subNode);
         });
 
+        $selfAttributeData = [];
         $attributeData = [];
         foreach ($this->attrList as $attr) {
+            $selfAttributeData[] = ($node->getNode(0)->nodeType == XML_ELEMENT_NODE) ? $node->attr($attr) : '';
             $currentAttributeData = $subNodeList->each(function ($subNode, $i) use ($attr) {
                 if ($subNode->getNode(0)->nodeType == XML_ELEMENT_NODE && !is_null($subNode->attr($attr))) {
                     return $subNode->attr($attr);
@@ -255,7 +257,7 @@ class UtilXpath
             $attributeData = array_merge($attributeData, $currentAttributeData);
         }
 
-        $data = array_merge($data, $attributeData);
+        $data = array_merge($data, $attributeData, $selfAttributeData);
 
         return $data;
     }
