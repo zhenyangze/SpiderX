@@ -70,10 +70,14 @@ class Url
         }
 
         extract(parse_url($base));
+        if (empty($path)) {
+            $path = '/';
+        }
 
         $path = preg_replace('#/[^/]*$#', '', $path);
-
-        if ($rel[0] == '/') {
+        if (stripos($rel, '//') === 0) {
+            return $scheme . ':'. $rel;
+        } elseif ($rel[0] == '/') {
             $path = '';
         }
 
