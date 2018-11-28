@@ -145,6 +145,22 @@ on_fetch_{news,需要替换不同的name值} = function($pageInfo, $html, $data)
 ```
 
 ## 高级玩法
+
+### 设置cookie和header头
+> 需要重写`setGetHtml`方法
+```php
+$spider->setGetHtml = function ($pageInfo) {
+    $pageInfo['cookie'] = '...';
+    $pageInfo['extra'] = [
+        'headers' => [
+            'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36',
+            'Referer' => '...',
+        ]
+    ];
+    return Url::getHtml($pageInfo);
+};
+```
+
 ### 模拟登录
 需要要`on_start`回调中添加自动登录逻辑
 > 部分页面可能需要先get方式获取页面中的参数，然后再发起POST请求
@@ -171,8 +187,8 @@ $spider->on_start = function () use ($spider) {
     $spider->addUrl($pageInfo);
     return true;
 };
-
 ```
+
 ### 无限级数据采集
 实现的方式就是在data的单元中，把url的值设置为上一个单元的`name.DataField`的形式
 > 参考demo目录sina文件。
