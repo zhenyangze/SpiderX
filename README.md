@@ -146,6 +146,34 @@ on_fetch_{news,需要替换不同的name值} = function($pageInfo, $html, $data)
 
 ## 高级玩法
 
+### 获取页面数据
+1. 字符串截取
+```php
+//字符串模式
+\SpiderX\Lib\Util::subStrByStr($start, $end, $html, true);
+//正则模型
+\SpiderX\Lib\Util::subStrByPreg($start, $end, $html, true);
+```
+2. xpath
+```php
+$crawler = new \Symfony\Component\DomCrawler\Crawler();
+$crawler->addHtmlContent($html);
+$crawler->filterXPath('//h3')
+$crawler->filterXPath('//h3')->text();
+$crawler->filterXPath('//h3')->nodeName();
+$crawler->filterXPath('//h3')->attr('class');
+$attributes = $crawler
+    ->filterXpath('//body/p')
+    ->extract(array('_text', 'class'));
+$crawler->filterXPath('//*[@id="YKTabCon2_10"]//tr')->each(function ($node, $i){
+	//
+});
+```
+3. 正则
+```php
+preg_match();
+```
+
 ### 设置cookie和header头
 > 需要重写`setGetHtml`方法
 ```php
