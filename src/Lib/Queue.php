@@ -46,7 +46,7 @@ class Queue
      */
     public function delete()
     {
-        $this->redis->delete($this->key);
+        $this->redis->del($this->key);
     }
 
     /**

@@ -45,7 +45,7 @@ class Unique
      */
     public function delete()
     {
-        $this->redis->delete($this->key);
+        $this->redis->del($this->key);
     }
 
     /**
@@ -55,7 +55,7 @@ class Unique
      */
     public function length()
     {
-        return $this->redis->ssize($this->key);
+        return $this->redis->scard($this->key);
     }
 
     /**

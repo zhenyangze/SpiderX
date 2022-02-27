@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Short description for url.php
  *
@@ -8,6 +9,7 @@
  * @copyright (C) 2018 zhenyangze <zhenyangze@gmail.com>
  * @license MIT
  */
+
 namespace SpiderX\Lib;
 
 use GuzzleHttp\Client;
@@ -34,15 +36,15 @@ class Url
         $pageInfo = parse_url($url);
         foreach ($pageInfo as $field => $value) {
             switch ($field) {
-            case 'scheme':
-                $pageInfo[$field] .= '://';
-                break;
-            case 'query':
-                $pageInfo[$field] = '?' . $value;
-                break;
-            case 'fragment':
-                $pageInfo[$field] = '';
-                break;
+                case 'scheme':
+                    $pageInfo[$field] .= '://';
+                    break;
+                case 'query':
+                    $pageInfo[$field] = '?' . $value;
+                    break;
+                case 'fragment':
+                    $pageInfo[$field] = '';
+                    break;
             }
         }
         return implode('', $pageInfo);
@@ -65,8 +67,8 @@ class Url
             return $rel;
         }
 
-        if ($rel[0]=='#' || $rel[0]=='?') {
-            return $base.$rel;
+        if ($rel[0] == '#' || $rel[0] == '?') {
+            return $base . $rel;
         }
 
         extract(parse_url($base));
@@ -76,7 +78,7 @@ class Url
 
         $path = preg_replace('#/[^/]*$#', '', $path);
         if (stripos($rel, '//') === 0) {
-            return $scheme . ':'. $rel;
+            return $scheme . ':' . $rel;
         } elseif ($rel[0] == '/') {
             $path = '';
         }
@@ -84,9 +86,9 @@ class Url
         $abs = "$host$path/$rel";
 
         $re = array('#(/\.?/)#', '#/(?!\.\.)[^/]+/\.\./#');
-        for ($n=1; $n>0; $abs=preg_replace($re, '/', $abs, -1, $n)) {
+        for ($n = 1; $n > 0; $abs = preg_replace($re, '/', $abs, -1, $n)) {
         }
-        return $scheme.'://'.$abs;
+        return $scheme . '://' . $abs;
     }
 
     /**
@@ -131,23 +133,23 @@ class Url
             $query = isset($pageInfo['query']) ? $pageInfo['query'] : '';
             if (is_array($query)) {
                 $sendData['form_params'] = $query;
-    } else {
-        $sendData['body'] = $query;
-    }
-}
+            } else {
+                $sendData['body'] = $query;
+            }
+        }
 
-if (isset($pageInfo['extra'])) {
-    $sendData = array_merge($sendData, $pageInfo['extra']);
-}
+        if (isset($pageInfo['extra'])) {
+            $sendData = array_merge($sendData, $pageInfo['extra']);
+        }
 
-$html = '';
-try {
-    $response = self::$instance['client']->request($method, $pageInfo['url'], $sendData);
-    $html = $response->getBody();
-    $html = @mb_convert_encoding((string)$html, 'UTF-8', 'UTF-8,GBK,GB2312,BIG5,LATIN1');
-    $statusCode = $response->getStatusCode();
-    if (!in_array($statusCode, [200])) {
-        Log::debug('http error:' . $statusCode, $pageInfo);
+        $html = '';
+        try {
+            $response = self::$instance['client']->request($method, $pageInfo['url'], $sendData);
+            $html = $response->getBody();
+            $html = @mb_convert_encoding((string)$html, 'UTF-8', 'UTF-8,GBK,GB2312,BIG5,LATIN1');
+            $statusCode = $response->getStatusCode();
+            if (!in_array($statusCode, [200])) {
+                Log::debug('http error:' . $statusCode, $pageInfo);
             }
         } catch (TransferException $e) {
             $html = '';

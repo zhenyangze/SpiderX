@@ -108,9 +108,9 @@ abstract class SpiderXAbstract
             Log::out('配置信息type字段不存在', 'red');
             return;
         }
-        if (false === $this->invok('on_add_url', [
+        if (false === ($pageInfo = $this->invok('on_add_url', [
             $pageInfo
-        ])) {
+        ]))) {
             return;
         };
 

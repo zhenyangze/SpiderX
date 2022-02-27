@@ -55,10 +55,10 @@ class Table
      */
     public function delete()
     {
-        $this->redis->delete($this->setKey);
+        $this->redis->del($this->setKey);
 
         $keys = $this->redis->keys($this->hashKey . '*');
-        $this->redis->delete($keys);
+        $this->redis->del($keys);
     }
 
     /**
@@ -68,7 +68,7 @@ class Table
      */
     public function length()
     {
-        return $this->redis->ssize($this->setKey);
+        return $this->redis->scard($this->setKey);
     }
 
     /**
@@ -113,7 +113,7 @@ class Table
     public function remove($key)
     {
         $hashKey = $this->hashKey . $key;
-        $this->redis->delete($hashKey);
-        $this->redis->sRemove($hashKey);
+        $this->redis->del($hashKey);
+        $this->redis->sRem($hashKey);
     }
     }

@@ -162,7 +162,8 @@ $spider->on_start = function () {
     return true;
 };
 $spider->on_add_url = function ($pageInfo) {
-    return true;
+    // 添加前修改url信息
+    return $pageInfo;
 };
 $spider->on_add_url_fail = function ($pageInfo) {
     return true;
